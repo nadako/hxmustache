@@ -194,7 +194,7 @@ class Mustache {
 
     static var escapeRegExpRe = ~/[\-\[\]{}()*+?.,\\\^$|#\s]/g;
     static inline function escapeRegExp(string:String):String {
-        return escapeRegExpRe.replace(string, '\\$&');
+        return escapeRegExpRe.map(string, function(r) return "\\" + r.matched(0));
     }
 
     static var nonSpaceRe = ~/\S/;
