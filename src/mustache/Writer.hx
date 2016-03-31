@@ -45,30 +45,36 @@ class Writer {
     }
 
     function renderSection(token:Token, context:Context, partials, originalTemplate:String):String {
-        var buffer = '';
         var value:Dynamic = context.lookup(token.value);
 
-        function subRender(template) return render(template, context, partials);
+        if (value == null)
+            return null;
+
+        if ((value is Bool) && !(value : Bool))
+            return null;
 
         switch (Type.typeof(value)) {
-            case TNull:
-                return null;
             case TClass(Array):
-                for (elem in (value : Array<Dynamic>)) {
-                    buffer += renderTokens(token.subTokens, context.push(elem), partials, originalTemplate);
+                var buffer = '';
+                var arr = (value : Array<Dynamic>), len = arr.length;
+                for (i in 0...len) {
+                    buffer += renderTokens(token.subTokens, context.push(arr[i]), partials, originalTemplate);
                 }
-            case TObject | TFloat | TInt | TClass(String):
-                buffer += renderTokens(token.subTokens, context.push(value), partials, originalTemplate);
+                return buffer;
+            case TObject | TFloat | TInt:
+                return renderTokens(token.subTokens, context.push(value), partials, originalTemplate);
+            case TClass(String):
+                if ((value : String).length == 0)
+                    return null;
+                return renderTokens(token.subTokens, context.push(value), partials, originalTemplate);
             case TFunction:
                 // Extract the portion of the original template that the section contains.
-                value = value(context.view, originalTemplate.substring(token.endIndex, token.sectionEndIndex), subRender);
+                value = value(context.view, originalTemplate.substring(token.endIndex, token.sectionEndIndex), function(template) return render(template, context, partials));
                 if (value != null)
-                    buffer += value;
+                    return value;
             default:
-                buffer += renderTokens(token.subTokens, context, partials, originalTemplate);
+                return renderTokens(token.subTokens, context, partials, originalTemplate);
         }
-
-        return buffer;
     }
 
     function renderInverted(token:Token, context:Context, partials, originalTemplate:String):String {
