@@ -53,4 +53,4 @@ script:
   - haxe tests.hxml -cs bin/cs                && mono bin/cs/bin/TestMain.exe
   - haxe tests.hxml -cpp bin/cpp              && ./bin/cpp/TestMain
   - haxe tests.hxml -php bin/php              && php bin/php/index.php
-  - haxe tests.hxml -pytin bin/test.py        && python3 bin/test.py
+  - haxe tests.hxml -python bin/test.py        && python3 bin/test.py
