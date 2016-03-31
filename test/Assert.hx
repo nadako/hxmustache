@@ -1,5 +1,3 @@
-using buddy.Should;
-
 class Assert {
     public static var assert(default,never) = new A();
 }
