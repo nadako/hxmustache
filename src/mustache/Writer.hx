@@ -37,7 +37,8 @@ class Writer {
                 case Text: rawValue(token);
                 case Comment | SetDelimiter | SectionClose: continue;
             }
-            buffer += value;
+            if (value != null)
+                buffer += value;
         }
 
         return buffer;
@@ -98,8 +99,8 @@ class Writer {
     }
 
     function escapedValue(token:Token, context:Context):String {
-        var value = Std.string(context.lookup(token.value));
-        return if (value != null) Mustache.escape(value) else null;
+        var value = context.lookup(token.value);
+        return if (value != null) Mustache.escape(Std.string(value)) else null;
     }
 
     inline function rawValue(token:Token):String {
