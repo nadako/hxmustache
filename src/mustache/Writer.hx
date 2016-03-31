@@ -98,7 +98,7 @@ class Writer {
     }
 
     function escapedValue(token:Token, context:Context):String {
-        var value = context.lookup(token.value);
+        var value = Std.string(context.lookup(token.value));
         return if (value != null) Mustache.escape(value) else null;
     }
 
