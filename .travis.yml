@@ -1,5 +1,7 @@
-language: haxe
+sudo: required
 dist: trusty
+
+language: haxe
 
 os:
   - linux
