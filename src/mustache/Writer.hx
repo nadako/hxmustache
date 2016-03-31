@@ -50,7 +50,7 @@ class Writer {
         if (value == null)
             return null;
 
-        if ((value is Bool) && !(value : Bool))
+        if (Std.is(value, Bool) && !(value : Bool))
             return null;
 
         switch (Type.typeof(value)) {
@@ -82,7 +82,7 @@ class Writer {
 
         var render = (value == null);
 
-        if (!render && (value is Bool) && !(value : Bool))
+        if (!render && Std.is(value, Bool) && !(value : Bool))
             render = true;
 
         if (!render) {
@@ -92,7 +92,7 @@ class Writer {
         }
         
         if (!render) {
-            if ((value is String) && (value : String).length == 0)
+            if (Std.is(value, String) && (value : String).length == 0)
                 render = true;
         }
 
