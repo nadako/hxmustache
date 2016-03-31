@@ -1,7 +1,7 @@
 class Assert {
     public static var assert(default,never) = new A();
 
-    #if (haxe_ver < 3.3) // this is some hack for some haxe 3.2.1 bug
+    #if (php && haxe_ver < 3.3) // this is some hack for some haxe 3.2.1 bug
     @:native("assert")
     static function phpAssert() {
         untyped __php__("$args = func_get_args(); return call_user_func_array(self::$assert, $args);");
