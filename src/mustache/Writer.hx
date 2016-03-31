@@ -80,14 +80,23 @@ class Writer {
     function renderInverted(token:Token, context:Context, partials, originalTemplate:String):String {
         var value:Dynamic = context.lookup(token.value);
 
-        if (value != null)
-            return null;
+        var render = (value == null);
 
-        var arr = Std.instance(value, Array);
-        if (arr != null && arr.length > 0)
-            return null;
+        if (!render) {
+            var arr = Std.instance(value, Array);
+            if (arr != null && arr.length == 0)
+                render = true;
+        }
+        
+        if (!render) {
+            if ((value is String) && (value : String).length == 0)
+                render = true;
+        }
 
-        return renderTokens(token.subTokens, context, partials, originalTemplate);
+        if (!render)
+            return null;
+        else
+            return renderTokens(token.subTokens, context, partials, originalTemplate);
     }
 
     function renderPartial(token:Token, context:Context, partials:Dynamic):String {
