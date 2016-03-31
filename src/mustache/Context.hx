@@ -1,11 +1,23 @@
 package mustache;
 
-class Context {
+@:dce
+@:forward
+abstract Context(ContextImpl) from ContextImpl {
+    public inline function new(view:View, ?parentContext:Context) {
+        this = new ContextImpl(view, parentContext);
+    }
+
+    @:from static inline function fromView(view:View):Context {
+        return new Context(view);
+    }
+}
+
+private class ContextImpl {
     public var view(default,null):View;
     public var parent(default,null):Context;
     var cache:Map<String,Dynamic>;
 
-    public function new(view:View, ?parentContext:Context) {
+    public function new(view:View, parentContext:Context) {
         this.view = view;
         this.cache = ['.' => view];
         this.parent = parentContext;
@@ -20,7 +32,7 @@ class Context {
         if (cache.exists(name)) {
             value = cache[name];
         } else {
-            var context = this, lookupHit = false;
+            var context = (this : Context), lookupHit = false;
             while (context != null) {
                 if (name.indexOf('.') > 0) {
                     value = context.view;
