@@ -1,0 +1,3 @@
+package mustache;
+
+typedef View = {}

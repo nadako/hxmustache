@@ -1,0 +1,8 @@
+language: haxe
+
+before_install:
+  - haxelib install buddy
+  - haxelib install utest
+
+hxml:
+  - build.hxml

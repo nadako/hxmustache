@@ -1,0 +1,9 @@
+-cp src
+-cp test
+-lib buddy
+-lib utest
+-main TestMain
+-D nodejs
+-js main.js
+--next
+-cmd node main.js
