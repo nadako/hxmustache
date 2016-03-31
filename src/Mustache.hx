@@ -66,7 +66,7 @@ class Mustache {
                     else
                         nonSpace = true;
 
-                    tokens.push(['text', chr, start, start + 1]);
+                    tokens.push(new Token('text', chr, start, start + 1));
                     start += 1;
 
                     // Check for whitespace on the current line.
@@ -103,7 +103,7 @@ class Mustache {
             if (scanner.scan(closingTagRe).length == 0)
                 throw 'Unclosed tag at ${scanner.pos}';
 
-            var token:Token = [ type, value, start, scanner.pos ];
+            var token = new Token(type, value, start, scanner.pos);
             tokens.push(token);
 
             if (type == '#' || type == '^') {
@@ -115,8 +115,8 @@ class Mustache {
                 if (openSection == null)
                     throw 'Unopened section "$value" at $start';
 
-                if (openSection[1] != value)
-                    throw 'Unclosed section "${openSection[1]}" at $start';
+                if (openSection.value != value)
+                    throw 'Unclosed section "${openSection.value}" at $start';
             } else if (type == 'name' || type == '{' || type == '&') {
                 nonSpace = true;
             } else if (type == '=') {
@@ -128,7 +128,7 @@ class Mustache {
         // Make sure there are no open sections when we're done.
         var openSection = sections.pop();
         if (openSection != null)
-            throw 'Unclosed section "${openSection[1]}" at ${scanner.pos}';
+            throw 'Unclosed section "${openSection.value}" at ${scanner.pos}';
 
         return nestTokens(squashTokens(tokens));
     }
@@ -140,9 +140,9 @@ class Mustache {
         var lastToken:Token = null;
         for (token in tokens) {
             if (token != null) {
-                if (token[0] == 'text' && lastToken != null && lastToken[0] == 'text') {
-                    lastToken[1] += token[1];
-                    lastToken[3] = token[3];
+                if (token.type == 'text' && lastToken != null && lastToken.type == 'text') {
+                    lastToken.value += token.value;
+                    lastToken.endIndex = token.endIndex;
                 } else {
                     squashedTokens.push(token);
                     lastToken = token;
@@ -159,15 +159,15 @@ class Mustache {
         var sections = [];
 
         for (token in tokens) {
-            switch (token[0]) {
+            switch (token.type) {
                 case '#' | '^':
                     collector.push(token);
                     sections.push(token);
-                    collector = token[4] = [];
+                    collector = token.subTokens = [];
                 case '/':
                     var section = sections.pop();
-                    section[5] = token[2];
-                    collector = if (sections.length > 0) sections[sections.length - 1][4] else nestedTokens;
+                    section.sectionEndIndex = token.startIndex;
+                    collector = if (sections.length > 0) sections[sections.length - 1].subTokens else nestedTokens;
                 default:
                     collector.push(token);
             }

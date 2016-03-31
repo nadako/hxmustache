@@ -28,7 +28,7 @@ class Writer {
         var buffer = '';
 
         for (token in tokens) {
-            var symbol = token[0];
+            var symbol = token.type;
 
             var value =
                 if (symbol == '#') renderSection(token, context, partials, originalTemplate);
@@ -48,7 +48,7 @@ class Writer {
 
     function renderSection(token:Token, context:Context, partials, originalTemplate:String):String {
         var buffer = '';
-        var value:Dynamic = context.lookup(token[1]);
+        var value:Dynamic = context.lookup(token.value);
 
         function subRender(template) return render(template, context, partials);
 
@@ -57,24 +57,24 @@ class Writer {
                 return null;
             case TClass(Array):
                 for (elem in (value : Array<Dynamic>)) {
-                    buffer += renderTokens(token[4], context.push(elem), partials, originalTemplate);
+                    buffer += renderTokens(token.subTokens, context.push(elem), partials, originalTemplate);
                 }
             case TObject | TFloat | TInt | TClass(String):
-                buffer += renderTokens(token[4], context.push(value), partials, originalTemplate);
+                buffer += renderTokens(token.subTokens, context.push(value), partials, originalTemplate);
             case TFunction:
                 // Extract the portion of the original template that the section contains.
-                value = value(context.view, originalTemplate.substring(token[3], token[5]), subRender);
+                value = value(context.view, originalTemplate.substring(token.endIndex, token.sectionEndIndex), subRender);
                 if (value != null)
                     buffer += value;
             default:
-                buffer += renderTokens(token[4], context, partials, originalTemplate);
+                buffer += renderTokens(token.subTokens, context, partials, originalTemplate);
         }
 
         return buffer;
     }
 
     function renderInverted(token:Token, context:Context, partials, originalTemplate:String):String {
-        var value:Dynamic = context.lookup(token[1]);
+        var value:Dynamic = context.lookup(token.value);
 
         if (value != null)
             return null;
@@ -83,13 +83,13 @@ class Writer {
         if (arr != null && arr.length > 0)
             return null;
 
-        return renderTokens(token[4], context, partials, originalTemplate);
+        return renderTokens(token.subTokens, context, partials, originalTemplate);
     }
 
     function renderPartial(token:Token, context:Context, partials:Dynamic):String {
         if (partials == null) return null;
 
-        var value = Reflect.isFunction(partials) ? partials(token[1]) : partials[token[1]];
+        var value = Reflect.isFunction(partials) ? partials(token.value) : partials[token.value];
         if (value != null)
             return renderTokens(this.parse(value), context, partials, value);
 
@@ -97,15 +97,15 @@ class Writer {
     }
 
     inline function unescapedValue(token:Token, context:Context):String {
-        return context.lookup(token[1]);
+        return context.lookup(token.value);
     }
 
     function escapedValue(token:Token, context:Context):String {
-        var value = context.lookup(token[1]);
+        var value = context.lookup(token.value);
         return if (value != null) Mustache.escape(value) else null;
     }
 
     inline function rawValue(token:Token):String {
-        return token[1];
+        return token.value;
     }
 }
