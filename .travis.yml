@@ -1,4 +1,5 @@
 language: haxe
+dist: trusty
 
 os:
   - linux
