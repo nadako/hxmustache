@@ -3,6 +3,7 @@
 -lib buddy
 -lib utest
 -main TestMain
+# -main Main
 -D nodejs
 -js main.js
 --next

@@ -28,19 +28,16 @@ class Writer {
         var buffer = '';
 
         for (token in tokens) {
-            var symbol = token.type;
-
-            var value =
-                if (symbol == '#') renderSection(token, context, partials, originalTemplate);
-                else if (symbol == '^') renderInverted(token, context, partials, originalTemplate);
-                else if (symbol == '>') renderPartial(token, context, partials);
-                else if (symbol == '&') unescapedValue(token, context);
-                else if (symbol == 'name') escapedValue(token, context);
-                else if (symbol == 'text') rawValue(token);
-                else null;
-
-            if (value != null)
-                buffer += value;
+            var value = switch (token.type) {
+                case Section: renderSection(token, context, partials, originalTemplate);
+                case SectionInverted: renderInverted(token, context, partials, originalTemplate);
+                case Partial: renderPartial(token, context, partials);
+                case ValueUnescaped: unescapedValue(token, context);
+                case Value: escapedValue(token, context);
+                case Text: rawValue(token);
+                case Comment | SetDelimiter | SectionClose: continue;
+            }
+            buffer += value;
         }
 
         return buffer;
@@ -89,7 +86,7 @@ class Writer {
     function renderPartial(token:Token, context:Context, partials:Dynamic):String {
         if (partials == null) return null;
 
-        var value = Reflect.isFunction(partials) ? partials(token.value) : partials[token.value];
+        var value = Reflect.isFunction(partials) ? partials(token.value) : Reflect.field(partials, token.value);
         if (value != null)
             return renderTokens(this.parse(value), context, partials, value);
 

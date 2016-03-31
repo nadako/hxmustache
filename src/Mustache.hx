@@ -1,4 +1,5 @@
 import mustache.*;
+import mustache.Token;
 
 class Mustache {
     static var tags = ["{{", "}}"];
@@ -66,7 +67,7 @@ class Mustache {
                     else
                         nonSpace = true;
 
-                    tokens.push(new Token('text', chr, start, start + 1));
+                    tokens.push(new Token(Text, chr, start, start + 1));
                     start += 1;
 
                     // Check for whitespace on the current line.
@@ -81,6 +82,7 @@ class Mustache {
             hasTag = true;
 
             // Get the tag type.
+            var tokenType;
             var type = scanner.scan(tagRe);
             if (type.length == 0) type = 'name';
             scanner.scan(whiteRe);
@@ -103,25 +105,39 @@ class Mustache {
             if (scanner.scan(closingTagRe).length == 0)
                 throw 'Unclosed tag at ${scanner.pos}';
 
-            var token = new Token(type, value, start, scanner.pos);
+            var tokenType = switch(type) {
+                case "#": Section;
+                case "^": SectionInverted;
+                case "/": SectionClose;
+                case "name": Value;
+                case "&": ValueUnescaped;
+                case "!": Comment;
+                case "=": SetDelimiter;
+                case ">": Partial;
+                default: throw "unknown token type: " + type;
+            }
+
+            var token = new Token(tokenType, value, start, scanner.pos);
             tokens.push(token);
 
-            if (type == '#' || type == '^') {
-                sections.push(token);
-            } else if (type == '/') {
-                // Check section nesting.
-                var openSection = sections.pop();
+            switch (tokenType) {
+                case Section | SectionInverted:
+                    sections.push(token);
+                case SectionClose:
+                    // Check section nesting.
+                    var openSection = sections.pop();
 
-                if (openSection == null)
-                    throw 'Unopened section "$value" at $start';
+                    if (openSection == null)
+                        throw 'Unopened section "$value" at $start';
 
-                if (openSection.value != value)
-                    throw 'Unclosed section "${openSection.value}" at $start';
-            } else if (type == 'name' || type == '{' || type == '&') {
-                nonSpace = true;
-            } else if (type == '=') {
-                // Set the tags for the next time around.
-                compileTags(spaceRe.split(value));
+                    if (openSection.value != value)
+                        throw 'Unclosed section "${openSection.value}" at $start';
+                case Value | ValueUnescaped:
+                    nonSpace = true;
+                case SetDelimiter:
+                    // Set the tags for the next time around.
+                    compileTags(spaceRe.split(value));
+                default:
             }
         }
 
@@ -140,7 +156,7 @@ class Mustache {
         var lastToken:Token = null;
         for (token in tokens) {
             if (token != null) {
-                if (token.type == 'text' && lastToken != null && lastToken.type == 'text') {
+                if (token.type == Text && lastToken != null && lastToken.type == Text) {
                     lastToken.value += token.value;
                     lastToken.endIndex = token.endIndex;
                 } else {
@@ -160,11 +176,11 @@ class Mustache {
 
         for (token in tokens) {
             switch (token.type) {
-                case '#' | '^':
+                case Section | SectionInverted:
                     collector.push(token);
                     sections.push(token);
                     collector = token.subTokens = [];
-                case '/':
+                case SectionClose:
                     var section = sections.pop();
                     section.sectionEndIndex = token.startIndex;
                     collector = if (sections.length > 0) sections[sections.length - 1].subTokens else nestedTokens;
