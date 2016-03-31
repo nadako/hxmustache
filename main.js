@@ -1124,7 +1124,7 @@ mustache_Writer.prototype = {
 		if(partials == null) {
 			return null;
 		}
-		var value = Reflect.isFunction(partials)?partials(token.value):Reflect.field(partials,token.value);
+		var value = partials(token.value);
 		if(value != null) {
 			return this.renderTokens(this.parse(value),context,partials,value);
 		}
@@ -3710,6 +3710,13 @@ mustache__$Context_ContextImpl.prototype = {
 		return value;
 	}
 	,__class__: mustache__$Context_ContextImpl
+};
+var mustache__$Partials_Partials_$Impl_$ = {};
+mustache__$Partials_Partials_$Impl_$.__name__ = ["mustache","_Partials","Partials_Impl_"];
+mustache__$Partials_Partials_$Impl_$.fromObject = function(obj) {
+	return function(name) {
+		return Reflect.field(obj,name);
+	};
 };
 var mustache_Scanner = function(string) {
 	this.string = string;

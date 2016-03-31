@@ -20,11 +20,11 @@ class Writer {
         return tokens;
     }
 
-    public inline function render(template:String, context:Context, partials):String {
+    public inline function render(template:String, context:Context, partials:Partials):String {
         return renderTokens(parse(template), context, partials, template);
     }
 
-    function renderTokens(tokens:Array<Token>, context:Context, partials, originalTemplate:String):String {
+    function renderTokens(tokens:Array<Token>, context:Context, partials:Partials, originalTemplate:String):String {
         var buffer = '';
 
         for (token in tokens) {
@@ -44,7 +44,7 @@ class Writer {
         return buffer;
     }
 
-    function renderSection(token:Token, context:Context, partials, originalTemplate:String):String {
+    function renderSection(token:Token, context:Context, partials:Partials, originalTemplate:String):String {
         var value:Dynamic = context.lookup(token.value);
 
         if (value == null)
@@ -77,7 +77,7 @@ class Writer {
         }
     }
 
-    function renderInverted(token:Token, context:Context, partials, originalTemplate:String):String {
+    function renderInverted(token:Token, context:Context, partials:Partials, originalTemplate:String):String {
         var value:Dynamic = context.lookup(token.value);
 
         var render = (value == null);
@@ -102,10 +102,11 @@ class Writer {
             return renderTokens(token.subTokens, context, partials, originalTemplate);
     }
 
-    function renderPartial(token:Token, context:Context, partials:Dynamic):String {
-        if (partials == null) return null;
+    function renderPartial(token:Token, context:Context, partials:Partials):String {
+        if (partials == null)
+            return null;
 
-        var value = Reflect.isFunction(partials) ? partials(token.value) : Reflect.field(partials, token.value);
+        var value = partials(token.value);
         if (value != null)
             return renderTokens(this.parse(value), context, partials, value);
 
