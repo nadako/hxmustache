@@ -82,6 +82,9 @@ class Writer {
 
         var render = (value == null);
 
+        if (!render && (value is Bool) && !(value : Bool))
+            render = true;
+
         if (!render) {
             var arr = Std.instance(value, Array);
             if (arr != null && arr.length == 0)
