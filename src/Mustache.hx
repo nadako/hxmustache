@@ -12,7 +12,7 @@ class Mustache {
 
     static var defaultWriter = new Writer();
 
-    public static inline function clearCache() return defaultWriter.clearCache();
+    public static inline function clearCache() defaultWriter.clearCache();
     public static inline function parse(template, ?tags) return defaultWriter.parse(template, tags);
     public static inline function render(template, view, ?partials) return defaultWriter.render(template, view, partials);
 
