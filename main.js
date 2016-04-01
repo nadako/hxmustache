@@ -496,9 +496,6 @@ mustache_Writer.prototype = {
 			return null;
 		}
 	}
-	,rawValue: function(token) {
-		return token.value;
-	}
 	,__class__: mustache_Writer
 };
 var Mustache = function() { };

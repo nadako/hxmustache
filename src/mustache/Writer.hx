@@ -42,7 +42,7 @@ class Writer {
                     else
                         unescapedValue(token, context);
                 case Text:
-                    rawValue(token);
+                    token.value;
                 case Comment | SetDelimiters | SectionClose:
                     continue;
             }
@@ -101,9 +101,5 @@ class Writer {
     function escapedValue(token:Token, context:Context):String {
         var value = context.lookup(token.value);
         return if (value != null) Mustache.escape(Std.string(value)) else null;
-    }
-
-    inline function rawValue(token:Token):String {
-        return token.value;
     }
 }
