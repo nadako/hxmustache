@@ -1,4 +1,4 @@
-[![Build Status](https://travis-ci.org/nadako/mustache-hx.svg?branch=master)](https://travis-ci.org/nadako/mustache-hx)
+[![Build Status](https://travis-ci.org/nadako/hxmustache.svg?branch=master)](https://travis-ci.org/nadako/hxmustache)
 
 # Mustache templates for Haxe
 
