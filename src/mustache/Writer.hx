@@ -55,7 +55,7 @@ class Writer {
                 renderTokens(token.subTokens, context.push(obj), partials, originalTemplate);
             case KArray(arr):
                 var buffer = '';
-                var arr = (value : Array<Dynamic>), len = arr.length;
+                var len = arr.length;
                 for (i in 0...len)
                     buffer += renderTokens(token.subTokens, context.push(arr[i]), partials, originalTemplate);
                 buffer;
