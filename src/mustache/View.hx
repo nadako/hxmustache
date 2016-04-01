@@ -1,3 +1,4 @@
 package mustache;
 
-typedef View = {}
+@:forward
+abstract View(Dynamic) from {} {}
