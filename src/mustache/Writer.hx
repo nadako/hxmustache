@@ -45,59 +45,32 @@ class Writer {
     }
 
     function renderSection(token:Token, context:Context, partials:Partials, originalTemplate:String):String {
-        var value:Dynamic = context.lookup(token.value);
-
-        if (value == null)
-            return null;
-
-        if (Std.is(value, Bool) && !(value : Bool))
-            return null;
-
-        switch (Type.typeof(value)) {
-            case TClass(Array):
+        var value = context.lookup(token.value);
+        return switch (Mustache.getSectionValueKind(value)) {
+            case KFalsy:
+                null;
+            case KBasic:
+                renderTokens(token.subTokens, context, partials, originalTemplate);
+            case KObject(obj):
+                renderTokens(token.subTokens, context.push(obj), partials, originalTemplate);
+            case KArray(arr):
                 var buffer = '';
                 var arr = (value : Array<Dynamic>), len = arr.length;
-                for (i in 0...len) {
+                for (i in 0...len)
                     buffer += renderTokens(token.subTokens, context.push(arr[i]), partials, originalTemplate);
-                }
-                return buffer;
-            case TObject | TFloat | TInt:
-                return renderTokens(token.subTokens, context.push(value), partials, originalTemplate);
-            case TClass(String):
-                if ((value : String).length == 0)
-                    return null;
-                return renderTokens(token.subTokens, context.push(value), partials, originalTemplate);
-            case TFunction:
+                buffer;
+            case KFunction(f):
                 // Extract the portion of the original template that the section contains.
-                return value(context.view, originalTemplate.substring(token.endIndex, token.sectionEndIndex), function(template) return render(template, context, partials));
-            default:
-                return renderTokens(token.subTokens, context, partials, originalTemplate);
+                f(context.view, originalTemplate.substring(token.endIndex, token.sectionEndIndex), function(template) return render(template, context, partials));
         }
     }
 
     function renderInverted(token:Token, context:Context, partials:Partials, originalTemplate:String):String {
-        var value:Dynamic = context.lookup(token.value);
-
-        var render = (value == null);
-
-        if (!render && Std.is(value, Bool) && !(value : Bool))
-            render = true;
-
-        if (!render) {
-            var arr = Std.instance(value, Array);
-            if (arr != null && arr.length == 0)
-                render = true;
+        var value = context.lookup(token.value);
+        return switch (Mustache.getSectionValueKind(value)) {
+            case KFalsy: renderTokens(token.subTokens, context, partials, originalTemplate);
+            default: null;
         }
-        
-        if (!render) {
-            if (Std.is(value, String) && (value : String).length == 0)
-                render = true;
-        }
-
-        if (!render)
-            return null;
-        else
-            return renderTokens(token.subTokens, context, partials, originalTemplate);
     }
 
     function renderPartial(token:Token, context:Context, partials:Partials):String {

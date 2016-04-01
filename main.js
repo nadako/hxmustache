@@ -440,64 +440,31 @@ mustache_Writer.prototype = {
 	,renderSection: function(token,context,partials,originalTemplate) {
 		var _gthis = this;
 		var value = context.lookup(token.value);
-		if(value == null) {
-			return null;
-		}
-		if(typeof(value) == "boolean" && !value) {
-			return null;
-		}
-		var _g = Type["typeof"](value);
+		var _g = Mustache.getSectionValueKind(value);
 		switch(_g[1]) {
-		case 1:case 2:case 4:
-			return this.renderTokens(token.subTokens,new mustache__$Context_ContextImpl(value,context),partials,originalTemplate);
-		case 5:
-			return value(context.view,originalTemplate.substring(token.endIndex,token.sectionEndIndex),function(template) {
+		case 0:
+			return null;
+		case 1:
+			var buffer = "";
+			var len = value.length;
+			var _g1 = 0;
+			while(_g1 < len) buffer += this.renderTokens(token.subTokens,new mustache__$Context_ContextImpl(value[_g1++],context),partials,originalTemplate);
+			return buffer;
+		case 2:
+			return this.renderTokens(token.subTokens,new mustache__$Context_ContextImpl(_g[2],context),partials,originalTemplate);
+		case 3:
+			return this.renderTokens(token.subTokens,context,partials,originalTemplate);
+		case 4:
+			return _g[2](context.view,originalTemplate.substring(token.endIndex,token.sectionEndIndex),function(template) {
 				return _gthis.render(template,context,partials);
 			});
-		case 6:
-			switch(_g[2]) {
-			case Array:
-				var buffer = "";
-				var arr = value;
-				var _g1 = 0;
-				var _g2 = arr.length;
-				while(_g1 < _g2) buffer += this.renderTokens(token.subTokens,new mustache__$Context_ContextImpl(arr[_g1++],context),partials,originalTemplate);
-				return buffer;
-			case String:
-				if(value.length == 0) {
-					return null;
-				}
-				return this.renderTokens(token.subTokens,new mustache__$Context_ContextImpl(value,context),partials,originalTemplate);
-			default:
-				return this.renderTokens(token.subTokens,context,partials,originalTemplate);
-			}
-			break;
-		default:
-			return this.renderTokens(token.subTokens,context,partials,originalTemplate);
 		}
 	}
 	,renderInverted: function(token,context,partials,originalTemplate) {
-		var value = context.lookup(token.value);
-		var render = value == null;
-		if(!render && typeof(value) == "boolean" && !value) {
-			render = true;
-		}
-		if(!render) {
-			var value1 = value;
-			var arr = (value1 instanceof Array)?value1:null;
-			if(arr != null && arr.length == 0) {
-				render = true;
-			}
-		}
-		if(!render) {
-			if(typeof(value) == "string" && value.length == 0) {
-				render = true;
-			}
-		}
-		if(!render) {
-			return null;
-		} else {
+		if(Mustache.getSectionValueKind(context.lookup(token.value))[1] == 0) {
 			return this.renderTokens(token.subTokens,context,partials,originalTemplate);
+		} else {
+			return null;
 		}
 	}
 	,renderPartial: function(token,context,partials) {
@@ -750,6 +717,60 @@ Mustache.escape = function(string) {
 		}
 	});
 };
+Mustache.getSectionValueKind = function(value) {
+	if(value == null) {
+		return SectionValueKind.KFalsy;
+	}
+	if(typeof(value) == "boolean") {
+		if(value) {
+			return SectionValueKind.KBasic;
+		} else {
+			return SectionValueKind.KFalsy;
+		}
+	}
+	if(typeof(value) == "number") {
+		if(value != 0) {
+			return SectionValueKind.KBasic;
+		} else {
+			return SectionValueKind.KFalsy;
+		}
+	}
+	var value1 = value;
+	var str = (value1 instanceof String)?value1:null;
+	if(str != null) {
+		if(str.length > 0) {
+			return SectionValueKind.KObject(str);
+		} else {
+			return SectionValueKind.KFalsy;
+		}
+	}
+	var value2 = value;
+	var arr = (value2 instanceof Array)?value2:null;
+	if(arr != null) {
+		if(arr.length > 0) {
+			return SectionValueKind.KArray(arr);
+		} else {
+			return SectionValueKind.KFalsy;
+		}
+	}
+	if(Reflect.isFunction(value)) {
+		return SectionValueKind.KFunction(value);
+	}
+	if(Reflect.isObject(value)) {
+		return SectionValueKind.KObject(value);
+	}
+	return SectionValueKind.KBasic;
+};
+var SectionValueKind = { __ename__ : ["SectionValueKind"], __constructs__ : ["KFalsy","KArray","KObject","KBasic","KFunction"] };
+SectionValueKind.KFalsy = ["KFalsy",0];
+SectionValueKind.KFalsy.toString = $estr;
+SectionValueKind.KFalsy.__enum__ = SectionValueKind;
+SectionValueKind.KArray = function(a) { var $x = ["KArray",1,a]; $x.__enum__ = SectionValueKind; $x.toString = $estr; return $x; };
+SectionValueKind.KObject = function(o) { var $x = ["KObject",2,o]; $x.__enum__ = SectionValueKind; $x.toString = $estr; return $x; };
+SectionValueKind.KBasic = ["KBasic",3];
+SectionValueKind.KBasic.toString = $estr;
+SectionValueKind.KBasic.__enum__ = SectionValueKind;
+SectionValueKind.KFunction = function(f) { var $x = ["KFunction",4,f]; $x.__enum__ = SectionValueKind; $x.toString = $estr; return $x; };
 var ParseTest = function() {
 	var _gthis = this;
 	buddy_BuddySuite.call(this);
@@ -1146,6 +1167,21 @@ Reflect.compareMethods = function(f1,f2) {
 		return f1.method != null;
 	} else {
 		return false;
+	}
+};
+Reflect.isObject = function(v) {
+	if(v == null) {
+		return false;
+	}
+	var t = typeof(v);
+	if(!(t == "string" || t == "object" && v.__enum__ == null)) {
+		if(t == "function") {
+			return (v.__name__ || v.__ename__) != null;
+		} else {
+			return false;
+		}
+	} else {
+		return true;
 	}
 };
 var ScannerTest = function() {
