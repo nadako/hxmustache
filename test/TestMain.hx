@@ -2,5 +2,7 @@ class TestMain implements buddy.Buddy<[
     ScannerTest,
     ContextTest,
     ParseTest,
-    // TestSpec,
+    #if (!flash && (!js || hxnodejs))
+    TestSpec,
+    #end
 ]> {}

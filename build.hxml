@@ -4,7 +4,7 @@
 -lib utest
 -main TestMain
 # -main Main
--D nodejs
+-lib hxnodejs
 -js main.js
 --next
 -cmd node main.js

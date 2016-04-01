@@ -50,16 +50,18 @@ install:
   - haxelib install hxcs
   - haxelib install buddy
   - haxelib install utest
+  - haxelib install hxnodejs
   - haxelib list
+  - git clone https://github.com/mustache/spec
 
 script:
   # - haxe tests.hxml --interp
-  - haxe tests.hxml -neko bin/test.n          && neko bin/test.n
-  - haxe tests.hxml -js bin/test.js -D nodejs && node bin/test.js
-  - haxe tests.hxml -java bin/java            && java -jar bin/java/TestMain.jar
-  - haxe tests.hxml -cs bin/cs                && mono bin/cs/bin/TestMain.exe
-  - haxe tests.hxml -cpp bin/cpp              && ./bin/cpp/TestMain
-  - haxe tests.hxml -php bin/php              && php bin/php/index.php
-  - haxe tests.hxml -python bin/test.py       && python3 bin/test.py
+  - haxe tests.hxml -neko bin/test.n              && neko bin/test.n
+  - haxe tests.hxml -js bin/test.js -lib hxnodejs && node bin/test.js
+  - haxe tests.hxml -java bin/java                && java -jar bin/java/TestMain.jar
+  - haxe tests.hxml -cs bin/cs                    && mono bin/cs/bin/TestMain.exe
+  - haxe tests.hxml -cpp bin/cpp                  && ./bin/cpp/TestMain
+  - haxe tests.hxml -php bin/php                  && php bin/php/index.php
+  - haxe tests.hxml -python bin/test.py           && python3 bin/test.py
   - haxe tests.hxml -as3 bin/as3
   - haxe tests.hxml -swf bin/test.swf
