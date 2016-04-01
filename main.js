@@ -439,16 +439,16 @@ mustache_Writer.prototype = {
 	}
 	,renderSection: function(token,context,partials,originalTemplate) {
 		var _gthis = this;
-		var value = context.lookup(token.value);
-		var _g = Mustache.getSectionValueKind(value);
+		var _g = Mustache.getSectionValueKind(context.lookup(token.value));
 		switch(_g[1]) {
 		case 0:
 			return null;
 		case 1:
+			var arr = _g[2];
 			var buffer = "";
-			var len = value.length;
+			var len = arr.length;
 			var _g1 = 0;
-			while(_g1 < len) buffer += this.renderTokens(token.subTokens,new mustache__$Context_ContextImpl(value[_g1++],context),partials,originalTemplate);
+			while(_g1 < len) buffer += this.renderTokens(token.subTokens,new mustache__$Context_ContextImpl(arr[_g1++],context),partials,originalTemplate);
 			return buffer;
 		case 2:
 			return this.renderTokens(token.subTokens,new mustache__$Context_ContextImpl(_g[2],context),partials,originalTemplate);
