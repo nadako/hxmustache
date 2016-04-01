@@ -1,0 +1,11 @@
+{
+    "name": "hxmustache",
+    "url": "https://github.com/nadako/mustache-hx",
+    "description": "Logic-less templates",
+    "license": "MIT",
+    "version": "0.1.0",
+    "classPath": "src",
+    "releasenote": "Initial release",
+    "contributors": ["nadako"],
+    "tags": ["cross", "template"]
+}
