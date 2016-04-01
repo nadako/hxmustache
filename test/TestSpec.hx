@@ -1,9 +1,7 @@
 import sys.FileSystem;
 import sys.io.File;
 import haxe.io.Path;
-
-import Assert.assert;
-using buddy.Should;
+import utest.Assert;
 
 typedef Spec = {
     tests:Array<{
@@ -48,7 +46,7 @@ class TestSpec extends buddy.BuddySuite {
                             if (test.data.lambda != null && test.data.lambda.__tag__ == 'code')
                                 return;// test.data.lambda = eval('(function() { return ' + test.data.lambda.js + '; })');
                             var output = Mustache.render(test.template, new mustache.Context(test.data), test.partials);
-                            assert.equal(output, test.expected);
+                            Assert.equals(test.expected, output);
                         });
                     }
                 });
