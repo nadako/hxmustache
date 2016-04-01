@@ -114,13 +114,13 @@ class Mustache {
                 throw 'Unclosed tag at ${scanner.pos}';
 
             var tokenType = switch(type) {
-                case "#": Section;
-                case "^": SectionInverted;
+                case "#": Section(false);
+                case "^": Section(true);
                 case "/": SectionClose;
-                case "name": Value;
-                case "&": ValueUnescaped;
+                case "name": Value(true);
+                case "&": Value(false);
                 case "!": Comment;
-                case "=": SetDelimiter;
+                case "=": SetDelimiters;
                 case ">": Partial;
                 default: throw "unknown token type: " + type;
             }
@@ -129,7 +129,7 @@ class Mustache {
             tokens.push(token);
 
             switch (tokenType) {
-                case Section | SectionInverted:
+                case Section(_):
                     sections.push(token);
                 case SectionClose:
                     // Check section nesting.
@@ -140,9 +140,9 @@ class Mustache {
 
                     if (openSection.value != value)
                         throw 'Unclosed section "${openSection.value}" at $start';
-                case Value | ValueUnescaped:
+                case Value(_):
                     nonSpace = true;
-                case SetDelimiter:
+                case SetDelimiters:
                     // Set the tags for the next time around.
                     compileTags(spaceRe.split(value));
                 default:
@@ -184,7 +184,7 @@ class Mustache {
 
         for (token in tokens) {
             switch (token.type) {
-                case Section | SectionInverted:
+                case Section(_):
                     collector.push(token);
                     sections.push(token);
                     collector = token.subTokens = [];

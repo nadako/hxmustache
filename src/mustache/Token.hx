@@ -2,14 +2,12 @@ package mustache;
 
 enum TokenType {
     Text;
-    Value;
-    ValueUnescaped;
-    Section;
-    SectionInverted;
+    Value(escaped:Bool);
+    Section(inverted:Bool);
     SectionClose;
     Partial;
     Comment;
-    SetDelimiter;
+    SetDelimiters;
 }
 
 class Token {

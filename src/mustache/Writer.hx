@@ -29,13 +29,22 @@ class Writer {
 
         for (token in tokens) {
             var value = switch (token.type) {
-                case Section: renderSection(token, context, partials, originalTemplate);
-                case SectionInverted: renderInverted(token, context, partials, originalTemplate);
-                case Partial: renderPartial(token, context, partials);
-                case ValueUnescaped: unescapedValue(token, context);
-                case Value: escapedValue(token, context);
-                case Text: rawValue(token);
-                case Comment | SetDelimiter | SectionClose: continue;
+                case Section(inverted):
+                    if (inverted)
+                        renderInverted(token, context, partials, originalTemplate);
+                    else
+                        renderSection(token, context, partials, originalTemplate);
+                case Partial:
+                    renderPartial(token, context, partials);
+                case Value(escape):
+                    if (escape)
+                        escapedValue(token, context);
+                    else
+                        unescapedValue(token, context);
+                case Text:
+                    rawValue(token);
+                case Comment | SetDelimiters | SectionClose:
+                    continue;
             }
             if (value != null)
                 buffer += value;

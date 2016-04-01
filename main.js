@@ -408,26 +408,29 @@ mustache_Writer.prototype = {
 			var token = tokens[_g];
 			++_g;
 			var value;
-			switch(token.type[1]) {
+			var _g1 = token.type;
+			switch(_g1[1]) {
 			case 0:
 				value = token.value;
 				break;
 			case 1:
-				value = this.escapedValue(token,context);
+				if(_g1[2]) {
+					value = this.escapedValue(token,context);
+				} else {
+					value = this.unescapedValue(token,context);
+				}
 				break;
 			case 2:
-				value = this.unescapedValue(token,context);
-				break;
-			case 3:
-				value = this.renderSection(token,context,partials,originalTemplate);
+				if(_g1[2]) {
+					value = this.renderInverted(token,context,partials,originalTemplate);
+				} else {
+					value = this.renderSection(token,context,partials,originalTemplate);
+				}
 				break;
 			case 4:
-				value = this.renderInverted(token,context,partials,originalTemplate);
-				break;
-			case 6:
 				value = this.renderPartial(token,context,partials);
 				break;
-			case 5:case 7:case 8:
+			case 3:case 5:case 6:
 				continue;
 				break;
 			}
@@ -588,25 +591,25 @@ Mustache.parseTemplate = function(template,tags) {
 			tokenType = mustache_TokenType.Comment;
 			break;
 		case "#":
-			tokenType = mustache_TokenType.Section;
+			tokenType = mustache_TokenType.Section(false);
 			break;
 		case "&":
-			tokenType = mustache_TokenType.ValueUnescaped;
+			tokenType = mustache_TokenType.Value(false);
 			break;
 		case "/":
 			tokenType = mustache_TokenType.SectionClose;
 			break;
 		case "=":
-			tokenType = mustache_TokenType.SetDelimiter;
+			tokenType = mustache_TokenType.SetDelimiters;
 			break;
 		case ">":
 			tokenType = mustache_TokenType.Partial;
 			break;
 		case "^":
-			tokenType = mustache_TokenType.SectionInverted;
+			tokenType = mustache_TokenType.Section(true);
 			break;
 		case "name":
-			tokenType = mustache_TokenType.Value;
+			tokenType = mustache_TokenType.Value(true);
 			break;
 		default:
 			throw new js__$Boot_HaxeError("unknown token type: " + type);
@@ -614,13 +617,13 @@ Mustache.parseTemplate = function(template,tags) {
 		var token = new mustache_Token(tokenType,value,start,scanner.pos);
 		tokens.push(token);
 		switch(tokenType[1]) {
-		case 1:case 2:
+		case 1:
 			nonSpace = true;
 			break;
-		case 3:case 4:
+		case 2:
 			sections.push(token);
 			break;
-		case 5:
+		case 3:
 			var openSection = sections.pop();
 			if(openSection == null) {
 				throw new js__$Boot_HaxeError("Unopened section \"" + value + "\" at " + start);
@@ -629,7 +632,7 @@ Mustache.parseTemplate = function(template,tags) {
 				throw new js__$Boot_HaxeError("Unclosed section \"" + openSection.value + "\" at " + start);
 			}
 			break;
-		case 8:
+		case 6:
 			compileTags(Mustache.spaceRe.split(value));
 			break;
 		default:
@@ -669,12 +672,12 @@ Mustache.nestTokens = function(tokens) {
 		var token = tokens[_g];
 		++_g;
 		switch(token.type[1]) {
-		case 3:case 4:
+		case 2:
 			collector.push(token);
 			sections.push(token);
 			collector = token.subTokens = [];
 			break;
-		case 5:
+		case 3:
 			var section = sections.pop();
 			section.sectionEndIndex = token.startIndex;
 			if(sections.length > 0) {
@@ -772,43 +775,43 @@ var ParseTest = function() {
 	} else {
 		_g.h[""] = value;
 	}
-	var value1 = [new mustache_Token(mustache_TokenType.Value,"hi",0,6)];
+	var value1 = [new mustache_Token(mustache_TokenType.Value(true),"hi",0,6)];
 	if(__map_reserved["{{hi}}"] != null) {
 		_g.setReserved("{{hi}}",value1);
 	} else {
 		_g.h["{{hi}}"] = value1;
 	}
-	var value2 = [new mustache_Token(mustache_TokenType.Value,"hi.world",0,12)];
+	var value2 = [new mustache_Token(mustache_TokenType.Value(true),"hi.world",0,12)];
 	if(__map_reserved["{{hi.world}}"] != null) {
 		_g.setReserved("{{hi.world}}",value2);
 	} else {
 		_g.h["{{hi.world}}"] = value2;
 	}
-	var value3 = [new mustache_Token(mustache_TokenType.Value,"hi . world",0,14)];
+	var value3 = [new mustache_Token(mustache_TokenType.Value(true),"hi . world",0,14)];
 	if(__map_reserved["{{hi . world}}"] != null) {
 		_g.setReserved("{{hi . world}}",value3);
 	} else {
 		_g.h["{{hi . world}}"] = value3;
 	}
-	var value4 = [new mustache_Token(mustache_TokenType.Value,"hi",0,7)];
+	var value4 = [new mustache_Token(mustache_TokenType.Value(true),"hi",0,7)];
 	if(__map_reserved["{{ hi}}"] != null) {
 		_g.setReserved("{{ hi}}",value4);
 	} else {
 		_g.h["{{ hi}}"] = value4;
 	}
-	var value5 = [new mustache_Token(mustache_TokenType.Value,"hi",0,7)];
+	var value5 = [new mustache_Token(mustache_TokenType.Value(true),"hi",0,7)];
 	if(__map_reserved["{{hi }}"] != null) {
 		_g.setReserved("{{hi }}",value5);
 	} else {
 		_g.h["{{hi }}"] = value5;
 	}
-	var value6 = [new mustache_Token(mustache_TokenType.Value,"hi",0,8)];
+	var value6 = [new mustache_Token(mustache_TokenType.Value(true),"hi",0,8)];
 	if(__map_reserved["{{ hi }}"] != null) {
 		_g.setReserved("{{ hi }}",value6);
 	} else {
 		_g.h["{{ hi }}"] = value6;
 	}
-	var value7 = [new mustache_Token(mustache_TokenType.ValueUnescaped,"hi",0,8)];
+	var value7 = [new mustache_Token(mustache_TokenType.Value(false),"hi",0,8)];
 	if(__map_reserved["{{{hi}}}"] != null) {
 		_g.setReserved("{{{hi}}}",value7);
 	} else {
@@ -856,55 +859,55 @@ var ParseTest = function() {
 	} else {
 		_g.h["a\n b"] = value14;
 	}
-	var value15 = [new mustache_Token(mustache_TokenType.Text,"a",0,1),new mustache_Token(mustache_TokenType.Value,"hi",1,7)];
+	var value15 = [new mustache_Token(mustache_TokenType.Text,"a",0,1),new mustache_Token(mustache_TokenType.Value(true),"hi",1,7)];
 	if(__map_reserved["a{{hi}}"] != null) {
 		_g.setReserved("a{{hi}}",value15);
 	} else {
 		_g.h["a{{hi}}"] = value15;
 	}
-	var value16 = [new mustache_Token(mustache_TokenType.Text,"a ",0,2),new mustache_Token(mustache_TokenType.Value,"hi",2,8)];
+	var value16 = [new mustache_Token(mustache_TokenType.Text,"a ",0,2),new mustache_Token(mustache_TokenType.Value(true),"hi",2,8)];
 	if(__map_reserved["a {{hi}}"] != null) {
 		_g.setReserved("a {{hi}}",value16);
 	} else {
 		_g.h["a {{hi}}"] = value16;
 	}
-	var value17 = [new mustache_Token(mustache_TokenType.Text," a",0,2),new mustache_Token(mustache_TokenType.Value,"hi",2,8)];
+	var value17 = [new mustache_Token(mustache_TokenType.Text," a",0,2),new mustache_Token(mustache_TokenType.Value(true),"hi",2,8)];
 	if(__map_reserved[" a{{hi}}"] != null) {
 		_g.setReserved(" a{{hi}}",value17);
 	} else {
 		_g.h[" a{{hi}}"] = value17;
 	}
-	var value18 = [new mustache_Token(mustache_TokenType.Text," a ",0,3),new mustache_Token(mustache_TokenType.Value,"hi",3,9)];
+	var value18 = [new mustache_Token(mustache_TokenType.Text," a ",0,3),new mustache_Token(mustache_TokenType.Value(true),"hi",3,9)];
 	if(__map_reserved[" a {{hi}}"] != null) {
 		_g.setReserved(" a {{hi}}",value18);
 	} else {
 		_g.h[" a {{hi}}"] = value18;
 	}
-	var value19 = [new mustache_Token(mustache_TokenType.Text,"a",0,1),new mustache_Token(mustache_TokenType.Value,"hi",1,7),new mustache_Token(mustache_TokenType.Text,"b",7,8)];
+	var value19 = [new mustache_Token(mustache_TokenType.Text,"a",0,1),new mustache_Token(mustache_TokenType.Value(true),"hi",1,7),new mustache_Token(mustache_TokenType.Text,"b",7,8)];
 	if(__map_reserved["a{{hi}}b"] != null) {
 		_g.setReserved("a{{hi}}b",value19);
 	} else {
 		_g.h["a{{hi}}b"] = value19;
 	}
-	var value20 = [new mustache_Token(mustache_TokenType.Text,"a",0,1),new mustache_Token(mustache_TokenType.Value,"hi",1,7),new mustache_Token(mustache_TokenType.Text," b",7,9)];
+	var value20 = [new mustache_Token(mustache_TokenType.Text,"a",0,1),new mustache_Token(mustache_TokenType.Value(true),"hi",1,7),new mustache_Token(mustache_TokenType.Text," b",7,9)];
 	if(__map_reserved["a{{hi}} b"] != null) {
 		_g.setReserved("a{{hi}} b",value20);
 	} else {
 		_g.h["a{{hi}} b"] = value20;
 	}
-	var value21 = [new mustache_Token(mustache_TokenType.Text,"a",0,1),new mustache_Token(mustache_TokenType.Value,"hi",1,7),new mustache_Token(mustache_TokenType.Text,"b ",7,9)];
+	var value21 = [new mustache_Token(mustache_TokenType.Text,"a",0,1),new mustache_Token(mustache_TokenType.Value(true),"hi",1,7),new mustache_Token(mustache_TokenType.Text,"b ",7,9)];
 	if(__map_reserved["a{{hi}}b "] != null) {
 		_g.setReserved("a{{hi}}b ",value21);
 	} else {
 		_g.h["a{{hi}}b "] = value21;
 	}
-	var value22 = [new mustache_Token(mustache_TokenType.Text,"a\n",0,2),new mustache_Token(mustache_TokenType.Value,"hi",2,8),new mustache_Token(mustache_TokenType.Text," b \n",8,12)];
+	var value22 = [new mustache_Token(mustache_TokenType.Text,"a\n",0,2),new mustache_Token(mustache_TokenType.Value(true),"hi",2,8),new mustache_Token(mustache_TokenType.Text," b \n",8,12)];
 	if(__map_reserved["a\n{{hi}} b \n"] != null) {
 		_g.setReserved("a\n{{hi}} b \n",value22);
 	} else {
 		_g.h["a\n{{hi}} b \n"] = value22;
 	}
-	var value23 = [new mustache_Token(mustache_TokenType.Text,"a\n ",0,3),new mustache_Token(mustache_TokenType.Value,"hi",3,9),new mustache_Token(mustache_TokenType.Text," \nb",9,12)];
+	var value23 = [new mustache_Token(mustache_TokenType.Text,"a\n ",0,3),new mustache_Token(mustache_TokenType.Value(true),"hi",3,9),new mustache_Token(mustache_TokenType.Text," \nb",9,12)];
 	if(__map_reserved["a\n {{hi}} \nb"] != null) {
 		_g.setReserved("a\n {{hi}} \nb",value23);
 	} else {
@@ -916,73 +919,73 @@ var ParseTest = function() {
 	} else {
 		_g.h["a\n {{!hi}} \nb"] = value24;
 	}
-	var value25 = [new mustache_Token(mustache_TokenType.Text,"a\n",0,2),new mustache_Token(mustache_TokenType.Section,"a",2,8,[],8),new mustache_Token(mustache_TokenType.Text,"b",15,16)];
+	var value25 = [new mustache_Token(mustache_TokenType.Text,"a\n",0,2),new mustache_Token(mustache_TokenType.Section(false),"a",2,8,[],8),new mustache_Token(mustache_TokenType.Text,"b",15,16)];
 	if(__map_reserved["a\n{{#a}}{{/a}}\nb"] != null) {
 		_g.setReserved("a\n{{#a}}{{/a}}\nb",value25);
 	} else {
 		_g.h["a\n{{#a}}{{/a}}\nb"] = value25;
 	}
-	var value26 = [new mustache_Token(mustache_TokenType.Text,"a\n",0,2),new mustache_Token(mustache_TokenType.Section,"a",3,9,[],9),new mustache_Token(mustache_TokenType.Text,"b",16,17)];
+	var value26 = [new mustache_Token(mustache_TokenType.Text,"a\n",0,2),new mustache_Token(mustache_TokenType.Section(false),"a",3,9,[],9),new mustache_Token(mustache_TokenType.Text,"b",16,17)];
 	if(__map_reserved["a\n {{#a}}{{/a}}\nb"] != null) {
 		_g.setReserved("a\n {{#a}}{{/a}}\nb",value26);
 	} else {
 		_g.h["a\n {{#a}}{{/a}}\nb"] = value26;
 	}
-	var value27 = [new mustache_Token(mustache_TokenType.Text,"a\n",0,2),new mustache_Token(mustache_TokenType.Section,"a",3,9,[],9),new mustache_Token(mustache_TokenType.Text,"b",17,18)];
+	var value27 = [new mustache_Token(mustache_TokenType.Text,"a\n",0,2),new mustache_Token(mustache_TokenType.Section(false),"a",3,9,[],9),new mustache_Token(mustache_TokenType.Text,"b",17,18)];
 	if(__map_reserved["a\n {{#a}}{{/a}} \nb"] != null) {
 		_g.setReserved("a\n {{#a}}{{/a}} \nb",value27);
 	} else {
 		_g.h["a\n {{#a}}{{/a}} \nb"] = value27;
 	}
-	var value28 = [new mustache_Token(mustache_TokenType.Text,"a\n",0,2),new mustache_Token(mustache_TokenType.Section,"a",2,8,[],9),new mustache_Token(mustache_TokenType.Text,"b",16,17)];
+	var value28 = [new mustache_Token(mustache_TokenType.Text,"a\n",0,2),new mustache_Token(mustache_TokenType.Section(false),"a",2,8,[],9),new mustache_Token(mustache_TokenType.Text,"b",16,17)];
 	if(__map_reserved["a\n{{#a}}\n{{/a}}\nb"] != null) {
 		_g.setReserved("a\n{{#a}}\n{{/a}}\nb",value28);
 	} else {
 		_g.h["a\n{{#a}}\n{{/a}}\nb"] = value28;
 	}
-	var value29 = [new mustache_Token(mustache_TokenType.Text,"a\n",0,2),new mustache_Token(mustache_TokenType.Section,"a",3,9,[],10),new mustache_Token(mustache_TokenType.Text,"b",17,18)];
+	var value29 = [new mustache_Token(mustache_TokenType.Text,"a\n",0,2),new mustache_Token(mustache_TokenType.Section(false),"a",3,9,[],10),new mustache_Token(mustache_TokenType.Text,"b",17,18)];
 	if(__map_reserved["a\n {{#a}}\n{{/a}}\nb"] != null) {
 		_g.setReserved("a\n {{#a}}\n{{/a}}\nb",value29);
 	} else {
 		_g.h["a\n {{#a}}\n{{/a}}\nb"] = value29;
 	}
-	var value30 = [new mustache_Token(mustache_TokenType.Text,"a\n",0,2),new mustache_Token(mustache_TokenType.Section,"a",3,9,[],10),new mustache_Token(mustache_TokenType.Text,"b",18,19)];
+	var value30 = [new mustache_Token(mustache_TokenType.Text,"a\n",0,2),new mustache_Token(mustache_TokenType.Section(false),"a",3,9,[],10),new mustache_Token(mustache_TokenType.Text,"b",18,19)];
 	if(__map_reserved["a\n {{#a}}\n{{/a}} \nb"] != null) {
 		_g.setReserved("a\n {{#a}}\n{{/a}} \nb",value30);
 	} else {
 		_g.h["a\n {{#a}}\n{{/a}} \nb"] = value30;
 	}
-	var value31 = [new mustache_Token(mustache_TokenType.Text,"a\n",0,2),new mustache_Token(mustache_TokenType.Section,"a",2,8,[],9),new mustache_Token(mustache_TokenType.Section,"b",16,22,[],23),new mustache_Token(mustache_TokenType.Text,"b",30,31)];
+	var value31 = [new mustache_Token(mustache_TokenType.Text,"a\n",0,2),new mustache_Token(mustache_TokenType.Section(false),"a",2,8,[],9),new mustache_Token(mustache_TokenType.Section(false),"b",16,22,[],23),new mustache_Token(mustache_TokenType.Text,"b",30,31)];
 	if(__map_reserved["a\n{{#a}}\n{{/a}}\n{{#b}}\n{{/b}}\nb"] != null) {
 		_g.setReserved("a\n{{#a}}\n{{/a}}\n{{#b}}\n{{/b}}\nb",value31);
 	} else {
 		_g.h["a\n{{#a}}\n{{/a}}\n{{#b}}\n{{/b}}\nb"] = value31;
 	}
-	var value32 = [new mustache_Token(mustache_TokenType.Text,"a\n",0,2),new mustache_Token(mustache_TokenType.Section,"a",3,9,[],10),new mustache_Token(mustache_TokenType.Section,"b",17,23,[],24),new mustache_Token(mustache_TokenType.Text,"b",31,32)];
+	var value32 = [new mustache_Token(mustache_TokenType.Text,"a\n",0,2),new mustache_Token(mustache_TokenType.Section(false),"a",3,9,[],10),new mustache_Token(mustache_TokenType.Section(false),"b",17,23,[],24),new mustache_Token(mustache_TokenType.Text,"b",31,32)];
 	if(__map_reserved["a\n {{#a}}\n{{/a}}\n{{#b}}\n{{/b}}\nb"] != null) {
 		_g.setReserved("a\n {{#a}}\n{{/a}}\n{{#b}}\n{{/b}}\nb",value32);
 	} else {
 		_g.h["a\n {{#a}}\n{{/a}}\n{{#b}}\n{{/b}}\nb"] = value32;
 	}
-	var value33 = [new mustache_Token(mustache_TokenType.Text,"a\n",0,2),new mustache_Token(mustache_TokenType.Section,"a",3,9,[],10),new mustache_Token(mustache_TokenType.Section,"b",17,23,[],24),new mustache_Token(mustache_TokenType.Text,"b",32,33)];
+	var value33 = [new mustache_Token(mustache_TokenType.Text,"a\n",0,2),new mustache_Token(mustache_TokenType.Section(false),"a",3,9,[],10),new mustache_Token(mustache_TokenType.Section(false),"b",17,23,[],24),new mustache_Token(mustache_TokenType.Text,"b",32,33)];
 	if(__map_reserved["a\n {{#a}}\n{{/a}}\n{{#b}}\n{{/b}} \nb"] != null) {
 		_g.setReserved("a\n {{#a}}\n{{/a}}\n{{#b}}\n{{/b}} \nb",value33);
 	} else {
 		_g.h["a\n {{#a}}\n{{/a}}\n{{#b}}\n{{/b}} \nb"] = value33;
 	}
-	var value34 = [new mustache_Token(mustache_TokenType.Text,"a\n",0,2),new mustache_Token(mustache_TokenType.Section,"a",2,8,[new mustache_Token(mustache_TokenType.Section,"b",9,15,[],16)],23),new mustache_Token(mustache_TokenType.Text,"b",30,31)];
+	var value34 = [new mustache_Token(mustache_TokenType.Text,"a\n",0,2),new mustache_Token(mustache_TokenType.Section(false),"a",2,8,[new mustache_Token(mustache_TokenType.Section(false),"b",9,15,[],16)],23),new mustache_Token(mustache_TokenType.Text,"b",30,31)];
 	if(__map_reserved["a\n{{#a}}\n{{#b}}\n{{/b}}\n{{/a}}\nb"] != null) {
 		_g.setReserved("a\n{{#a}}\n{{#b}}\n{{/b}}\n{{/a}}\nb",value34);
 	} else {
 		_g.h["a\n{{#a}}\n{{#b}}\n{{/b}}\n{{/a}}\nb"] = value34;
 	}
-	var value35 = [new mustache_Token(mustache_TokenType.Text,"a\n",0,2),new mustache_Token(mustache_TokenType.Section,"a",3,9,[new mustache_Token(mustache_TokenType.Section,"b",10,16,[],17)],24),new mustache_Token(mustache_TokenType.Text,"b",31,32)];
+	var value35 = [new mustache_Token(mustache_TokenType.Text,"a\n",0,2),new mustache_Token(mustache_TokenType.Section(false),"a",3,9,[new mustache_Token(mustache_TokenType.Section(false),"b",10,16,[],17)],24),new mustache_Token(mustache_TokenType.Text,"b",31,32)];
 	if(__map_reserved["a\n {{#a}}\n{{#b}}\n{{/b}}\n{{/a}}\nb"] != null) {
 		_g.setReserved("a\n {{#a}}\n{{#b}}\n{{/b}}\n{{/a}}\nb",value35);
 	} else {
 		_g.h["a\n {{#a}}\n{{#b}}\n{{/b}}\n{{/a}}\nb"] = value35;
 	}
-	var value36 = [new mustache_Token(mustache_TokenType.Text,"a\n",0,2),new mustache_Token(mustache_TokenType.Section,"a",3,9,[new mustache_Token(mustache_TokenType.Section,"b",10,16,[],17)],24),new mustache_Token(mustache_TokenType.Text,"b",32,33)];
+	var value36 = [new mustache_Token(mustache_TokenType.Text,"a\n",0,2),new mustache_Token(mustache_TokenType.Section(false),"a",3,9,[new mustache_Token(mustache_TokenType.Section(false),"b",10,16,[],17)],24),new mustache_Token(mustache_TokenType.Text,"b",32,33)];
 	if(__map_reserved["a\n {{#a}}\n{{#b}}\n{{/b}}\n{{/a}} \nb"] != null) {
 		_g.setReserved("a\n {{#a}}\n{{#b}}\n{{/b}}\n{{/a}} \nb",value36);
 	} else {
@@ -1006,43 +1009,43 @@ var ParseTest = function() {
 	} else {
 		_g.h["{{ > abc }}"] = value39;
 	}
-	var value40 = [new mustache_Token(mustache_TokenType.SetDelimiter,"<% %>",0,11)];
+	var value40 = [new mustache_Token(mustache_TokenType.SetDelimiters,"<% %>",0,11)];
 	if(__map_reserved["{{=<% %>=}}"] != null) {
 		_g.setReserved("{{=<% %>=}}",value40);
 	} else {
 		_g.h["{{=<% %>=}}"] = value40;
 	}
-	var value41 = [new mustache_Token(mustache_TokenType.SetDelimiter,"<% %>",0,13)];
+	var value41 = [new mustache_Token(mustache_TokenType.SetDelimiters,"<% %>",0,13)];
 	if(__map_reserved["{{= <% %> =}}"] != null) {
 		_g.setReserved("{{= <% %> =}}",value41);
 	} else {
 		_g.h["{{= <% %> =}}"] = value41;
 	}
-	var value42 = [new mustache_Token(mustache_TokenType.SetDelimiter,"<% %>",0,11),new mustache_Token(mustache_TokenType.SetDelimiter,"{{ }}",11,22)];
+	var value42 = [new mustache_Token(mustache_TokenType.SetDelimiters,"<% %>",0,11),new mustache_Token(mustache_TokenType.SetDelimiters,"{{ }}",11,22)];
 	if(__map_reserved["{{=<% %>=}}<%={{ }}=%>"] != null) {
 		_g.setReserved("{{=<% %>=}}<%={{ }}=%>",value42);
 	} else {
 		_g.h["{{=<% %>=}}<%={{ }}=%>"] = value42;
 	}
-	var value43 = [new mustache_Token(mustache_TokenType.SetDelimiter,"<% %>",0,11),new mustache_Token(mustache_TokenType.Value,"hi",11,17)];
+	var value43 = [new mustache_Token(mustache_TokenType.SetDelimiters,"<% %>",0,11),new mustache_Token(mustache_TokenType.Value(true),"hi",11,17)];
 	if(__map_reserved["{{=<% %>=}}<%hi%>"] != null) {
 		_g.setReserved("{{=<% %>=}}<%hi%>",value43);
 	} else {
 		_g.h["{{=<% %>=}}<%hi%>"] = value43;
 	}
-	var value44 = [new mustache_Token(mustache_TokenType.Section,"a",0,6,[],6),new mustache_Token(mustache_TokenType.Text,"hi",12,14),new mustache_Token(mustache_TokenType.Section,"b",14,20,[],20),new mustache_Token(mustache_TokenType.Text,"\n",26,27)];
+	var value44 = [new mustache_Token(mustache_TokenType.Section(false),"a",0,6,[],6),new mustache_Token(mustache_TokenType.Text,"hi",12,14),new mustache_Token(mustache_TokenType.Section(false),"b",14,20,[],20),new mustache_Token(mustache_TokenType.Text,"\n",26,27)];
 	if(__map_reserved["{{#a}}{{/a}}hi{{#b}}{{/b}}\n"] != null) {
 		_g.setReserved("{{#a}}{{/a}}hi{{#b}}{{/b}}\n",value44);
 	} else {
 		_g.h["{{#a}}{{/a}}hi{{#b}}{{/b}}\n"] = value44;
 	}
-	var value45 = [new mustache_Token(mustache_TokenType.Value,"a",0,5),new mustache_Token(mustache_TokenType.Text,"\n",5,6),new mustache_Token(mustache_TokenType.Value,"b",6,11),new mustache_Token(mustache_TokenType.Text,"\n\n",11,13),new mustache_Token(mustache_TokenType.Section,"c",13,19,[],20)];
+	var value45 = [new mustache_Token(mustache_TokenType.Value(true),"a",0,5),new mustache_Token(mustache_TokenType.Text,"\n",5,6),new mustache_Token(mustache_TokenType.Value(true),"b",6,11),new mustache_Token(mustache_TokenType.Text,"\n\n",11,13),new mustache_Token(mustache_TokenType.Section(false),"c",13,19,[],20)];
 	if(__map_reserved["{{a}}\n{{b}}\n\n{{#c}}\n{{/c}}\n"] != null) {
 		_g.setReserved("{{a}}\n{{b}}\n\n{{#c}}\n{{/c}}\n",value45);
 	} else {
 		_g.h["{{a}}\n{{b}}\n\n{{#c}}\n{{/c}}\n"] = value45;
 	}
-	var value46 = [new mustache_Token(mustache_TokenType.Section,"foo",0,8,[new mustache_Token(mustache_TokenType.Section,"a",11,17,[new mustache_Token(mustache_TokenType.Text,"    ",18,22),new mustache_Token(mustache_TokenType.Value,"b",22,27),new mustache_Token(mustache_TokenType.Text,"\n",27,28)],30)],37)];
+	var value46 = [new mustache_Token(mustache_TokenType.Section(false),"foo",0,8,[new mustache_Token(mustache_TokenType.Section(false),"a",11,17,[new mustache_Token(mustache_TokenType.Text,"    ",18,22),new mustache_Token(mustache_TokenType.Value(true),"b",22,27),new mustache_Token(mustache_TokenType.Text,"\n",27,28)],30)],37)];
 	if(__map_reserved["{{#foo}}\n  {{#a}}\n    {{b}}\n  {{/a}}\n{{/foo}}\n"] != null) {
 		_g.setReserved("{{#foo}}\n  {{#a}}\n    {{b}}\n  {{/a}}\n{{/foo}}\n",value46);
 	} else {
@@ -3281,34 +3284,24 @@ mustache_Scanner.prototype = {
 	}
 	,__class__: mustache_Scanner
 };
-var mustache_TokenType = { __ename__ : ["mustache","TokenType"], __constructs__ : ["Text","Value","ValueUnescaped","Section","SectionInverted","SectionClose","Partial","Comment","SetDelimiter"] };
+var mustache_TokenType = { __ename__ : ["mustache","TokenType"], __constructs__ : ["Text","Value","Section","SectionClose","Partial","Comment","SetDelimiters"] };
 mustache_TokenType.Text = ["Text",0];
 mustache_TokenType.Text.toString = $estr;
 mustache_TokenType.Text.__enum__ = mustache_TokenType;
-mustache_TokenType.Value = ["Value",1];
-mustache_TokenType.Value.toString = $estr;
-mustache_TokenType.Value.__enum__ = mustache_TokenType;
-mustache_TokenType.ValueUnescaped = ["ValueUnescaped",2];
-mustache_TokenType.ValueUnescaped.toString = $estr;
-mustache_TokenType.ValueUnescaped.__enum__ = mustache_TokenType;
-mustache_TokenType.Section = ["Section",3];
-mustache_TokenType.Section.toString = $estr;
-mustache_TokenType.Section.__enum__ = mustache_TokenType;
-mustache_TokenType.SectionInverted = ["SectionInverted",4];
-mustache_TokenType.SectionInverted.toString = $estr;
-mustache_TokenType.SectionInverted.__enum__ = mustache_TokenType;
-mustache_TokenType.SectionClose = ["SectionClose",5];
+mustache_TokenType.Value = function(escaped) { var $x = ["Value",1,escaped]; $x.__enum__ = mustache_TokenType; $x.toString = $estr; return $x; };
+mustache_TokenType.Section = function(inverted) { var $x = ["Section",2,inverted]; $x.__enum__ = mustache_TokenType; $x.toString = $estr; return $x; };
+mustache_TokenType.SectionClose = ["SectionClose",3];
 mustache_TokenType.SectionClose.toString = $estr;
 mustache_TokenType.SectionClose.__enum__ = mustache_TokenType;
-mustache_TokenType.Partial = ["Partial",6];
+mustache_TokenType.Partial = ["Partial",4];
 mustache_TokenType.Partial.toString = $estr;
 mustache_TokenType.Partial.__enum__ = mustache_TokenType;
-mustache_TokenType.Comment = ["Comment",7];
+mustache_TokenType.Comment = ["Comment",5];
 mustache_TokenType.Comment.toString = $estr;
 mustache_TokenType.Comment.__enum__ = mustache_TokenType;
-mustache_TokenType.SetDelimiter = ["SetDelimiter",8];
-mustache_TokenType.SetDelimiter.toString = $estr;
-mustache_TokenType.SetDelimiter.__enum__ = mustache_TokenType;
+mustache_TokenType.SetDelimiters = ["SetDelimiters",6];
+mustache_TokenType.SetDelimiters.toString = $estr;
+mustache_TokenType.SetDelimiters.__enum__ = mustache_TokenType;
 var mustache_Token = function(type,value,startIndex,endIndex,subTokens,sectionEndIndex) {
 	this.type = type;
 	this.value = value;
