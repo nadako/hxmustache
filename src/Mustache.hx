@@ -2,21 +2,29 @@ import mustache.*;
 import mustache.Token;
 
 class Mustache {
-    static var tags = ["{{", "}}"];
+    public static var tags = ["{{", "}}"];
 
     static var tagRe = ~/#|\^|\/|>|\{|&|=|!/;
     static var whiteRe = ~/\s*/;
     static var spaceRe = ~/\s+/;
     static var equalsRe = ~/\s*=/;
     static var curlyRe = ~/\s*\}/;
-
     static var defaultWriter = new Writer();
 
-    public static inline function clearCache() defaultWriter.clearCache();
-    public static inline function parse(template, ?tags) return defaultWriter.parse(template, tags);
-    public static inline function render(template, view, ?partials) return defaultWriter.render(template, view, partials);
+    public static inline function render(template:String, context:Context, ?partials:Partials):String {
+        return defaultWriter.render(template, context, partials);
+    }
 
-    public static function parseTemplate(template:String, ?tags:Array<String>):Array<Token> {
+    public static inline function parse(template:String, ?tags:Array<String>):Array<Token> {
+        return defaultWriter.parse(template, tags);
+    }
+
+    public static inline function clearCache():Void {
+        defaultWriter.clearCache();
+    }
+
+    @:allow(mustache.Writer.parse)
+    static function parseTemplate(template:String, ?tags:Array<String>):Array<Token> {
         if (template.length == 0)
             return [];
 
@@ -212,7 +220,6 @@ class Mustache {
         '`' => '&#x60;',
         '=' => '&#x3D;',
     ];
-
     static var escapeRe = ~/[&<>"'`=\/]/g;
     public static function escape(string:String):String {
         return escapeRe.map(string, function(re) return entityMap[re.matched(0)]);

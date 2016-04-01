@@ -527,15 +527,15 @@ mustache_Writer.prototype = {
 };
 var Mustache = function() { };
 Mustache.__name__ = ["Mustache"];
-Mustache.clearCache = function() {
-	Mustache.defaultWriter.cache = new haxe_ds_StringMap();
+Mustache.render = function(template,context,partials) {
+	var _this = Mustache.defaultWriter;
+	return _this.renderTokens(_this.parse(template),context,partials,template);
 };
 Mustache.parse = function(template,tags) {
 	return Mustache.defaultWriter.parse(template,tags);
 };
-Mustache.render = function(template,view,partials) {
-	var _this = Mustache.defaultWriter;
-	return _this.renderTokens(_this.parse(template),view,partials,template);
+Mustache.clearCache = function() {
+	Mustache.defaultWriter.cache = new haxe_ds_StringMap();
 };
 Mustache.parseTemplate = function(template,tags) {
 	if(template.length == 0) {
