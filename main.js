@@ -414,10 +414,14 @@ mustache_Writer.prototype = {
 				value = token.value;
 				break;
 			case 1:
-				if(_g1[2]) {
-					value = this.escapedValue(token,context);
+				var $escape = _g1[2];
+				var value1 = context.lookup(token.value);
+				if(value1 == null) {
+					value = null;
+				} else if($escape) {
+					value = Mustache.escape(Std.string(value1));
 				} else {
-					value = this.unescapedValue(token,context);
+					value = Std.string(value1);
 				}
 				break;
 			case 2:
@@ -479,22 +483,6 @@ mustache_Writer.prototype = {
 			return this.renderTokens(this.parse(value),context,partials,value);
 		}
 		return null;
-	}
-	,unescapedValue: function(token,context) {
-		var value = context.lookup(token.value);
-		if(value != null) {
-			return Std.string(value);
-		} else {
-			return null;
-		}
-	}
-	,escapedValue: function(token,context) {
-		var value = context.lookup(token.value);
-		if(value != null) {
-			return Mustache.escape(Std.string(value));
-		} else {
-			return null;
-		}
 	}
 	,__class__: mustache_Writer
 };

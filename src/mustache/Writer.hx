@@ -37,10 +37,13 @@ class Writer {
                 case Partial:
                     renderPartial(token, context, partials);
                 case Value(escape):
-                    if (escape)
-                        escapedValue(token, context);
+                    var value = context.lookup(token.value);
+                    if (value == null)
+                        null;
+                    else if (escape)
+                        Mustache.escape(Std.string(value));
                     else
-                        unescapedValue(token, context);
+                        Std.string(value);
                 case Text:
                     token.value;
                 case Comment | SetDelimiters | SectionClose:
@@ -93,13 +96,4 @@ class Writer {
         return null;
     }
 
-    function unescapedValue(token:Token, context:Context):String {
-        var value = context.lookup(token.value);
-        return if (value != null) return Std.string(value) else null;
-    }
-
-    function escapedValue(token:Token, context:Context):String {
-        var value = context.lookup(token.value);
-        return if (value != null) Mustache.escape(Std.string(value)) else null;
-    }
 }
