@@ -111,8 +111,9 @@ class Writer {
         return null;
     }
 
-    inline function unescapedValue(token:Token, context:Context):String {
-        return context.lookup(token.value);
+    function unescapedValue(token:Token, context:Context):String {
+        var value = context.lookup(token.value);
+        return if (value != null) return Std.string(value) else null;
     }
 
     function escapedValue(token:Token, context:Context):String {
