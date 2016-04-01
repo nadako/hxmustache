@@ -3107,7 +3107,7 @@ mustache__$Context_ContextImpl.prototype = {
 };
 var mustache__$Partials_Partials_$Impl_$ = {};
 mustache__$Partials_Partials_$Impl_$.__name__ = ["mustache","_Partials","Partials_Impl_"];
-mustache__$Partials_Partials_$Impl_$.fromObject = function(obj) {
+mustache__$Partials_Partials_$Impl_$.fromDynamic = function(obj) {
 	return function(name) {
 		return Reflect.field(obj,name);
 	};
