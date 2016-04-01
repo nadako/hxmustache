@@ -201,7 +201,7 @@ class Mustache {
     }
 
     static var escapeRegExpRe = ~/[\-\[\]{}()*+?.,\\\^$|#\s]/g;
-    static inline function escapeRegExp(string:String):String {
+    static function escapeRegExp(string:String):String {
         return escapeRegExpRe.map(string, function(r) return "\\" + r.matched(0));
     }
 

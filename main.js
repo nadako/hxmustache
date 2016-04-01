@@ -526,15 +526,9 @@ Mustache.parseTemplate = function(template,tags) {
 		if(tagsToCompile.length != 2) {
 			throw new js__$Boot_HaxeError("Invalid tags: " + Std.string(tagsToCompile));
 		}
-		openingTagRe = new EReg(Mustache.escapeRegExpRe.map(tagsToCompile[0],function(r) {
-			return "\\" + r.matched(0);
-		}) + "\\s*","");
-		closingTagRe = new EReg("\\s*" + Mustache.escapeRegExpRe.map(tagsToCompile[1],function(r1) {
-			return "\\" + r1.matched(0);
-		}),"");
-		closingCurlyRe = new EReg("\\s*" + Mustache.escapeRegExpRe.map("}" + tagsToCompile[1],function(r2) {
-			return "\\" + r2.matched(0);
-		}),"");
+		openingTagRe = new EReg(Mustache.escapeRegExp(tagsToCompile[0]) + "\\s*","");
+		closingTagRe = new EReg("\\s*" + Mustache.escapeRegExp(tagsToCompile[1]),"");
+		closingCurlyRe = new EReg("\\s*" + Mustache.escapeRegExp("}" + tagsToCompile[1]),"");
 	};
 	compileTags(tags != null?tags:Mustache.tags);
 	var scanner = new mustache_Scanner(template);
