@@ -7,11 +7,9 @@ typedef Spec = {
     tests:Array<{
         name:String,
         desc:String,
-        data: {
-            ?lambda:{__tag__:String}
-        },
+        data:{},
         template:String,
-        partials:Dynamic,
+        ?partials:Dynamic,
         expected:String,
     }>
 }
