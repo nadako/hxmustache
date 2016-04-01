@@ -8,621 +8,6 @@ function $extend(from, fields) {
 	if( fields.toString !== Object.prototype.toString ) proto.toString = fields.toString;
 	return proto;
 }
-var utest_Assert = function() { };
-utest_Assert.__name__ = ["utest","Assert"];
-utest_Assert.isTrue = function(cond,msg,pos) {
-	if(utest_Assert.results == null) {
-		throw new js__$Boot_HaxeError("Assert.results is not currently bound to any assert context");
-	}
-	if(null == msg) {
-		msg = "expected true";
-	}
-	if(cond) {
-		utest_Assert.results.add(utest_Assertation.Success(pos));
-	} else {
-		utest_Assert.results.add(utest_Assertation.Failure(msg,pos));
-	}
-};
-utest_Assert.isFalse = function(value,msg,pos) {
-	if(null == msg) {
-		msg = "expected false";
-	}
-	utest_Assert.isTrue(value == false,msg,pos);
-};
-utest_Assert.isNull = function(value,msg,pos) {
-	if(msg == null) {
-		msg = "expected null but it is " + utest_Assert.q(value);
-	}
-	utest_Assert.isTrue(value == null,msg,pos);
-};
-utest_Assert.notNull = function(value,msg,pos) {
-	if(null == msg) {
-		msg = "expected not null";
-	}
-	utest_Assert.isTrue(value != null,msg,pos);
-};
-utest_Assert["is"] = function(value,type,msg,pos) {
-	if(msg == null) {
-		msg = "expected type " + utest_Assert.typeToString(type) + " but it is " + utest_Assert.typeToString(value);
-	}
-	utest_Assert.isTrue(js_Boot.__instanceof(value,type),msg,pos);
-};
-utest_Assert.notEquals = function(expected,value,msg,pos) {
-	if(msg == null) {
-		msg = "expected " + utest_Assert.q(expected) + " and test value " + utest_Assert.q(value) + " should be different";
-	}
-	utest_Assert.isFalse(expected == value,msg,pos);
-};
-utest_Assert.equals = function(expected,value,msg,pos) {
-	if(msg == null) {
-		msg = "expected " + utest_Assert.q(expected) + " but it is " + utest_Assert.q(value);
-	}
-	utest_Assert.isTrue(expected == value,msg,pos);
-};
-utest_Assert.match = function(pattern,value,msg,pos) {
-	if(msg == null) {
-		msg = "the value " + utest_Assert.q(value) + " does not match the provided pattern";
-	}
-	utest_Assert.isTrue(pattern.match(value),msg,pos);
-};
-utest_Assert.floatEquals = function(expected,value,approx,msg,pos) {
-	if(msg == null) {
-		msg = "expected " + utest_Assert.q(expected) + " but it is " + utest_Assert.q(value);
-	}
-	utest_Assert.isTrue(utest_Assert._floatEquals(expected,value,approx),msg,pos);
-	return;
-};
-utest_Assert._floatEquals = function(expected,value,approx) {
-	if(isNaN(expected)) {
-		return isNaN(value);
-	} else if(isNaN(value)) {
-		return false;
-	} else if(!isFinite(expected) && !isFinite(value)) {
-		return expected > 0 == value > 0;
-	}
-	if(null == approx) {
-		approx = 1e-5;
-	}
-	return Math.abs(value - expected) <= approx;
-};
-utest_Assert.getTypeName = function(v) {
-	var _g = Type["typeof"](v);
-	switch(_g[1]) {
-	case 0:
-		return "`null`";
-	case 1:
-		return "Int";
-	case 2:
-		return "Float";
-	case 3:
-		return "Bool";
-	case 4:
-		return "Object";
-	case 5:
-		return "function";
-	case 6:
-		return Type.getClassName(_g[2]);
-	case 7:
-		return Type.getEnumName(_g[2]);
-	case 8:
-		return "`Unknown`";
-	}
-};
-utest_Assert.isIterable = function(v,isAnonym) {
-	if(!Lambda.has(isAnonym?Reflect.fields(v):Type.getInstanceFields(v == null?null:js_Boot.getClass(v)),"iterator")) {
-		return false;
-	}
-	return Reflect.isFunction(Reflect.field(v,"iterator"));
-};
-utest_Assert.isIterator = function(v,isAnonym) {
-	var fields = isAnonym?Reflect.fields(v):Type.getInstanceFields(v == null?null:js_Boot.getClass(v));
-	if(!Lambda.has(fields,"next") || !Lambda.has(fields,"hasNext")) {
-		return false;
-	}
-	if(Reflect.isFunction(Reflect.field(v,"next"))) {
-		return Reflect.isFunction(Reflect.field(v,"hasNext"));
-	} else {
-		return false;
-	}
-};
-utest_Assert.sameAs = function(expected,value,status) {
-	var texpected = utest_Assert.getTypeName(expected);
-	var tvalue = utest_Assert.getTypeName(value);
-	if(texpected != tvalue) {
-		status.error = "expected type " + texpected + " but it is " + tvalue + (status.path == ""?"":" for field " + status.path);
-		return false;
-	}
-	var _g = Type["typeof"](expected);
-	switch(_g[1]) {
-	case 0:case 1:case 3:
-		if(expected != value) {
-			status.error = "expected " + utest_Assert.q(expected) + " but it is " + utest_Assert.q(value) + (status.path == ""?"":" for field " + status.path);
-			return false;
-		}
-		return true;
-	case 2:
-		if(!utest_Assert._floatEquals(expected,value)) {
-			status.error = "expected " + utest_Assert.q(expected) + " but it is " + utest_Assert.q(value) + (status.path == ""?"":" for field " + status.path);
-			return false;
-		}
-		return true;
-	case 4:
-		if(status.recursive || status.path == "") {
-			var tfields = Reflect.fields(value);
-			var fields = Reflect.fields(expected);
-			var path = status.path;
-			var _g1 = 0;
-			while(_g1 < fields.length) {
-				var field = fields[_g1];
-				++_g1;
-				HxOverrides.remove(tfields,field);
-				status.path = path == ""?field:path + "." + field;
-				if(!Object.prototype.hasOwnProperty.call(value,field)) {
-					status.error = "expected field " + status.path + " does not exist in " + utest_Assert.q(value);
-					return false;
-				}
-				var e = Reflect.field(expected,field);
-				if(Reflect.isFunction(e)) {
-					continue;
-				}
-				if(!utest_Assert.sameAs(e,Reflect.field(value,field),status)) {
-					return false;
-				}
-			}
-			if(tfields.length > 0) {
-				status.error = "the tested object has extra field(s) (" + tfields.join(", ") + ") not included in the expected ones";
-				return false;
-			}
-		}
-		if(utest_Assert.isIterator(expected,true)) {
-			if(!utest_Assert.isIterator(value,true)) {
-				status.error = "expected Iterable but it is not " + (status.path == ""?"":" for field " + status.path);
-				return false;
-			}
-			if(status.recursive || status.path == "") {
-				var evalues = Lambda.array({ iterator : function() {
-					return expected;
-				}});
-				var vvalues = Lambda.array({ iterator : function() {
-					return value;
-				}});
-				if(evalues.length != vvalues.length) {
-					status.error = "expected " + evalues.length + " values in Iterator but they are " + vvalues.length + (status.path == ""?"":" for field " + status.path);
-					return false;
-				}
-				var path1 = status.path;
-				var _g11 = 0;
-				var _g2 = evalues.length;
-				while(_g11 < _g2) {
-					var i = _g11++;
-					status.path = path1 == ""?"iterator[" + i + "]":path1 + "[" + i + "]";
-					if(!utest_Assert.sameAs(evalues[i],vvalues[i],status)) {
-						status.error = "expected " + utest_Assert.q(expected) + " but it is " + utest_Assert.q(value) + (status.path == ""?"":" for field " + status.path);
-						return false;
-					}
-				}
-			}
-			return true;
-		}
-		if(utest_Assert.isIterable(expected,true)) {
-			if(!utest_Assert.isIterable(value,true)) {
-				status.error = "expected Iterator but it is not " + (status.path == ""?"":" for field " + status.path);
-				return false;
-			}
-			if(status.recursive || status.path == "") {
-				var evalues1 = Lambda.array(expected);
-				var vvalues1 = Lambda.array(value);
-				if(evalues1.length != vvalues1.length) {
-					status.error = "expected " + evalues1.length + " values in Iterable but they are " + vvalues1.length + (status.path == ""?"":" for field " + status.path);
-					return false;
-				}
-				var path2 = status.path;
-				var _g12 = 0;
-				var _g3 = evalues1.length;
-				while(_g12 < _g3) {
-					var i1 = _g12++;
-					status.path = path2 == ""?"iterable[" + i1 + "]":path2 + "[" + i1 + "]";
-					if(!utest_Assert.sameAs(evalues1[i1],vvalues1[i1],status)) {
-						return false;
-					}
-				}
-			}
-			return true;
-		}
-		return true;
-	case 5:
-		if(!Reflect.compareMethods(expected,value)) {
-			status.error = "expected same function reference" + (status.path == ""?"":" for field " + status.path);
-			return false;
-		}
-		return true;
-	case 6:
-		var cexpected = Type.getClassName(_g[2]);
-		var o = value;
-		var cvalue = Type.getClassName(o == null?null:js_Boot.getClass(o));
-		if(cexpected != cvalue) {
-			status.error = "expected instance of " + utest_Assert.q(cexpected) + " but it is " + utest_Assert.q(cvalue) + (status.path == ""?"":" for field " + status.path);
-			return false;
-		}
-		if(typeof(expected) == "string" && expected != value) {
-			status.error = "expected '" + Std.string(expected) + "' but it is '" + Std.string(value) + "'";
-			return false;
-		}
-		if((expected instanceof Array) && expected.__enum__ == null) {
-			if(status.recursive || status.path == "") {
-				if(expected.length != value.length) {
-					status.error = "expected " + Std.string(expected.length) + " elements but they are " + Std.string(value.length) + (status.path == ""?"":" for field " + status.path);
-					return false;
-				}
-				var path3 = status.path;
-				var _g13 = 0;
-				var _g4 = expected.length;
-				while(_g13 < _g4) {
-					var i2 = _g13++;
-					status.path = path3 == ""?"array[" + i2 + "]":path3 + "[" + i2 + "]";
-					if(!utest_Assert.sameAs(expected[i2],value[i2],status)) {
-						status.error = "expected " + utest_Assert.q(expected[i2]) + " but it is " + utest_Assert.q(value[i2]) + (status.path == ""?"":" for field " + status.path);
-						return false;
-					}
-				}
-			}
-			return true;
-		}
-		if(js_Boot.__instanceof(expected,Date)) {
-			if(expected.getTime() != value.getTime()) {
-				status.error = "expected " + utest_Assert.q(expected) + " but it is " + utest_Assert.q(value) + (status.path == ""?"":" for field " + status.path);
-				return false;
-			}
-			return true;
-		}
-		if(js_Boot.__instanceof(expected,haxe_io_Bytes)) {
-			if(status.recursive || status.path == "") {
-				var ebytes = expected;
-				var vbytes = value;
-				if(ebytes.length != vbytes.length) {
-					return false;
-				}
-				var _g14 = 0;
-				var _g5 = ebytes.length;
-				while(_g14 < _g5) {
-					var i3 = _g14++;
-					if(ebytes.b[i3] != vbytes.b[i3]) {
-						status.error = "expected byte " + ebytes.b[i3] + " but it is " + vbytes.b[i3] + (status.path == ""?"":" for field " + status.path);
-						return false;
-					}
-				}
-			}
-			return true;
-		}
-		if(js_Boot.__instanceof(expected,haxe_IMap)) {
-			if(status.recursive || status.path == "") {
-				var map = js_Boot.__cast(expected , haxe_IMap);
-				var vmap = js_Boot.__cast(value , haxe_IMap);
-				var _g6 = [];
-				var tmp = map.keys();
-				while(tmp.hasNext()) _g6.push(tmp.next());
-				var keys = _g6;
-				var _g15 = [];
-				var tmp1 = vmap.keys();
-				while(tmp1.hasNext()) _g15.push(tmp1.next());
-				var vkeys = _g15;
-				if(keys.length != vkeys.length) {
-					status.error = "expected " + keys.length + " keys but they are " + vkeys.length + (status.path == ""?"":" for field " + status.path);
-					return false;
-				}
-				var path4 = status.path;
-				var _g21 = 0;
-				while(_g21 < keys.length) {
-					var key = keys[_g21];
-					++_g21;
-					status.path = path4 == ""?"hash[" + Std.string(key) + "]":path4 + "[" + Std.string(key) + "]";
-					if(!utest_Assert.sameAs(map.get(key),vmap.get(key),status)) {
-						status.error = "expected " + utest_Assert.q(expected) + " but it is " + utest_Assert.q(value) + (status.path == ""?"":" for field " + status.path);
-						return false;
-					}
-				}
-			}
-			return true;
-		}
-		if(utest_Assert.isIterator(expected,false)) {
-			if(status.recursive || status.path == "") {
-				var evalues2 = Lambda.array({ iterator : function() {
-					return expected;
-				}});
-				var vvalues2 = Lambda.array({ iterator : function() {
-					return value;
-				}});
-				if(evalues2.length != vvalues2.length) {
-					status.error = "expected " + evalues2.length + " values in Iterator but they are " + vvalues2.length + (status.path == ""?"":" for field " + status.path);
-					return false;
-				}
-				var path5 = status.path;
-				var _g16 = 0;
-				var _g7 = evalues2.length;
-				while(_g16 < _g7) {
-					var i4 = _g16++;
-					status.path = path5 == ""?"iterator[" + i4 + "]":path5 + "[" + i4 + "]";
-					if(!utest_Assert.sameAs(evalues2[i4],vvalues2[i4],status)) {
-						status.error = "expected " + utest_Assert.q(expected) + " but it is " + utest_Assert.q(value) + (status.path == ""?"":" for field " + status.path);
-						return false;
-					}
-				}
-			}
-			return true;
-		}
-		if(utest_Assert.isIterable(expected,false)) {
-			if(status.recursive || status.path == "") {
-				var evalues3 = Lambda.array(expected);
-				var vvalues3 = Lambda.array(value);
-				if(evalues3.length != vvalues3.length) {
-					status.error = "expected " + evalues3.length + " values in Iterable but they are " + vvalues3.length + (status.path == ""?"":" for field " + status.path);
-					return false;
-				}
-				var path6 = status.path;
-				var _g17 = 0;
-				var _g8 = evalues3.length;
-				while(_g17 < _g8) {
-					var i5 = _g17++;
-					status.path = path6 == ""?"iterable[" + i5 + "]":path6 + "[" + i5 + "]";
-					if(!utest_Assert.sameAs(evalues3[i5],vvalues3[i5],status)) {
-						return false;
-					}
-				}
-			}
-			return true;
-		}
-		if(status.recursive || status.path == "") {
-			var o1 = expected;
-			var fields1 = Type.getInstanceFields(o1 == null?null:js_Boot.getClass(o1));
-			var path7 = status.path;
-			var _g9 = 0;
-			while(_g9 < fields1.length) {
-				var field1 = fields1[_g9];
-				++_g9;
-				status.path = path7 == ""?field1:path7 + "." + field1;
-				var e1 = Reflect.field(expected,field1);
-				if(Reflect.isFunction(e1)) {
-					continue;
-				}
-				if(!utest_Assert.sameAs(e1,Reflect.field(value,field1),status)) {
-					return false;
-				}
-			}
-		}
-		return true;
-	case 7:
-		var eexpected = Type.getEnumName(_g[2]);
-		var evalue = Type.getEnumName(Type.getEnum(value));
-		if(eexpected != evalue) {
-			status.error = "expected enumeration of " + utest_Assert.q(eexpected) + " but it is " + utest_Assert.q(evalue) + (status.path == ""?"":" for field " + status.path);
-			return false;
-		}
-		if(status.recursive || status.path == "") {
-			if(expected[1] != value[1]) {
-				status.error = "expected " + utest_Assert.q(expected[0]) + " but it is " + utest_Assert.q(value[0]) + (status.path == ""?"":" for field " + status.path);
-				return false;
-			}
-			var eparams = expected.slice(2);
-			var vparams = value.slice(2);
-			var path8 = status.path;
-			var _g18 = 0;
-			var _g10 = eparams.length;
-			while(_g18 < _g10) {
-				var i6 = _g18++;
-				status.path = path8 == ""?"enum[" + i6 + "]":path8 + "[" + i6 + "]";
-				if(!utest_Assert.sameAs(eparams[i6],vparams[i6],status)) {
-					status.error = "expected " + utest_Assert.q(expected) + " but it is " + utest_Assert.q(value) + (status.path == ""?"":" for field " + status.path);
-					return false;
-				}
-			}
-		}
-		return true;
-	case 8:
-		throw new js__$Boot_HaxeError("Unable to compare two unknown types");
-		break;
-	}
-};
-utest_Assert.q = function(v) {
-	if(typeof(v) == "string") {
-		return "\"" + StringTools.replace(v,"\"","\\\"") + "\"";
-	} else {
-		return Std.string(v);
-	}
-};
-utest_Assert.same = function(expected,value,recursive,msg,pos) {
-	var status = { recursive : null == recursive?true:recursive, path : "", error : null};
-	if(utest_Assert.sameAs(expected,value,status)) {
-		utest_Assert.pass(msg,pos);
-	} else {
-		utest_Assert.fail(msg == null?status.error:msg,pos);
-	}
-};
-utest_Assert.raises = function(method,type,msgNotThrown,msgWrongType,pos) {
-	try {
-		method();
-		var name = Type.getClassName(type);
-		if(name == null) {
-			name = "Dynamic";
-		}
-		if(null == msgNotThrown) {
-			msgNotThrown = "exception of type " + name + " not raised";
-		}
-		utest_Assert.fail(msgNotThrown,pos);
-	} catch( ex ) {
-		haxe_CallStack.lastException = ex;
-		if (ex instanceof js__$Boot_HaxeError) ex = ex.val;
-		if(null == type) {
-			utest_Assert.pass(null,pos);
-		} else {
-			var name1 = Type.getClassName(type);
-			if(null == msgWrongType) {
-				msgWrongType = "expected throw of type " + name1 + " but it is " + Std.string(ex);
-			}
-			utest_Assert.isTrue(js_Boot.__instanceof(ex,type),msgWrongType,pos);
-		}
-	}
-};
-utest_Assert.allows = function(possibilities,value,msg,pos) {
-	if(Lambda.has(possibilities,value)) {
-		utest_Assert.isTrue(true,msg,pos);
-	} else {
-		utest_Assert.fail(msg == null?"value " + utest_Assert.q(value) + " not found in the expected possibilities " + Std.string(possibilities):msg,pos);
-	}
-};
-utest_Assert.contains = function(match,values,msg,pos) {
-	if(Lambda.has(values,match)) {
-		utest_Assert.isTrue(true,msg,pos);
-	} else {
-		utest_Assert.fail(msg == null?"values " + utest_Assert.q(values) + " do not contain " + Std.string(match):msg,pos);
-	}
-};
-utest_Assert.notContains = function(match,values,msg,pos) {
-	if(!Lambda.has(values,match)) {
-		utest_Assert.isTrue(true,msg,pos);
-	} else {
-		utest_Assert.fail(msg == null?"values " + utest_Assert.q(values) + " do contain " + Std.string(match):msg,pos);
-	}
-};
-utest_Assert.stringContains = function(match,value,msg,pos) {
-	if(value != null && value.indexOf(match) >= 0) {
-		utest_Assert.isTrue(true,msg,pos);
-	} else {
-		utest_Assert.fail(msg == null?"value " + utest_Assert.q(value) + " does not contain " + utest_Assert.q(match):msg,pos);
-	}
-};
-utest_Assert.stringSequence = function(sequence,value,msg,pos) {
-	if(null == value) {
-		utest_Assert.fail(msg == null?"null argument value":msg,pos);
-		return;
-	}
-	var p = 0;
-	var _g = 0;
-	while(_g < sequence.length) {
-		var s = sequence[_g];
-		++_g;
-		var p2 = value.indexOf(s,p);
-		if(p2 < 0) {
-			if(msg == null) {
-				msg = "expected '" + s + "' after ";
-				if(p > 0) {
-					var cut = HxOverrides.substr(value,0,p);
-					if(cut.length > 30) {
-						cut = "..." + HxOverrides.substr(cut,-27,null);
-					}
-					msg += " '" + cut + "'";
-				} else {
-					msg += " begin";
-				}
-			}
-			utest_Assert.fail(msg,pos);
-			return;
-		}
-		p = p2 + s.length;
-	}
-	utest_Assert.isTrue(true,msg,pos);
-};
-utest_Assert.pass = function(msg,pos) {
-	if(msg == null) {
-		msg = "pass expected";
-	}
-	utest_Assert.isTrue(true,msg,pos);
-};
-utest_Assert.fail = function(msg,pos) {
-	if(msg == null) {
-		msg = "failure expected";
-	}
-	utest_Assert.isTrue(false,msg,pos);
-};
-utest_Assert.warn = function(msg) {
-	utest_Assert.results.add(utest_Assertation.Warning(msg));
-};
-utest_Assert.createAsync = function(f,timeout) {
-	return function() {
-	};
-};
-utest_Assert.createEvent = function(f,timeout) {
-	return function(e) {
-	};
-};
-utest_Assert.typeToString = function(t) {
-	try {
-		var o = t;
-		var _t = o == null?null:js_Boot.getClass(o);
-		if(_t != null) {
-			t = _t;
-		}
-	} catch( e ) {
-		haxe_CallStack.lastException = e;
-	}
-	try {
-		return Type.getClassName(t);
-	} catch( e1 ) {
-		haxe_CallStack.lastException = e1;
-	}
-	try {
-		var _t1 = Type.getEnum(t);
-		if(_t1 != null) {
-			t = _t1;
-		}
-	} catch( e2 ) {
-		haxe_CallStack.lastException = e2;
-	}
-	try {
-		return Type.getEnumName(t);
-	} catch( e3 ) {
-		haxe_CallStack.lastException = e3;
-	}
-	try {
-		return Std.string(Type["typeof"](t));
-	} catch( e4 ) {
-		haxe_CallStack.lastException = e4;
-	}
-	try {
-		return Std.string(t);
-	} catch( e5 ) {
-		haxe_CallStack.lastException = e5;
-	}
-	return "<unable to retrieve type name>";
-};
-var utest_Assertation = { __ename__ : ["utest","Assertation"], __constructs__ : ["Success","Failure","Error","SetupError","TeardownError","TimeoutError","AsyncError","Warning"] };
-utest_Assertation.Success = function(pos) { var $x = ["Success",0,pos]; $x.__enum__ = utest_Assertation; $x.toString = $estr; return $x; };
-utest_Assertation.Failure = function(msg,pos) { var $x = ["Failure",1,msg,pos]; $x.__enum__ = utest_Assertation; $x.toString = $estr; return $x; };
-utest_Assertation.Error = function(e,stack) { var $x = ["Error",2,e,stack]; $x.__enum__ = utest_Assertation; $x.toString = $estr; return $x; };
-utest_Assertation.SetupError = function(e,stack) { var $x = ["SetupError",3,e,stack]; $x.__enum__ = utest_Assertation; $x.toString = $estr; return $x; };
-utest_Assertation.TeardownError = function(e,stack) { var $x = ["TeardownError",4,e,stack]; $x.__enum__ = utest_Assertation; $x.toString = $estr; return $x; };
-utest_Assertation.TimeoutError = function(missedAsyncs,stack) { var $x = ["TimeoutError",5,missedAsyncs,stack]; $x.__enum__ = utest_Assertation; $x.toString = $estr; return $x; };
-utest_Assertation.AsyncError = function(e,stack) { var $x = ["AsyncError",6,e,stack]; $x.__enum__ = utest_Assertation; $x.toString = $estr; return $x; };
-utest_Assertation.Warning = function(msg) { var $x = ["Warning",7,msg]; $x.__enum__ = utest_Assertation; $x.toString = $estr; return $x; };
-var Assert = function() { };
-Assert.__name__ = ["Assert"];
-var _$Assert_A_$Impl_$ = {};
-_$Assert_A_$Impl_$.__name__ = ["_Assert","A_Impl_"];
-_$Assert_A_$Impl_$._new = function() {
-	return function(b) {
-		utest_Assert.isTrue(b,null,{ fileName : "Assert.hx", lineNumber : 14, className : "_Assert.A_Impl_", methodName : "_new"});
-	};
-};
-_$Assert_A_$Impl_$.equal = function(this1,a,b) {
-	utest_Assert.equals(b,a,null,{ fileName : "Assert.hx", lineNumber : 15, className : "_Assert.A_Impl_", methodName : "equal"});
-	return;
-};
-_$Assert_A_$Impl_$.deepEqual = function(this1,a,b) {
-	utest_Assert.same(b,a,null,null,{ fileName : "Assert.hx", lineNumber : 16, className : "_Assert.A_Impl_", methodName : "deepEqual"});
-	return;
-};
-_$Assert_A_$Impl_$["throws"] = function(this1,fn,re) {
-	try {
-		fn();
-	} catch( e ) {
-		haxe_CallStack.lastException = e;
-		if (e instanceof js__$Boot_HaxeError) e = e.val;
-		if( js_Boot.__instanceof(e,String) ) {
-			utest_Assert.match(re,e,null,{ fileName : "Assert.hx", lineNumber : 19, className : "_Assert.A_Impl_", methodName : "throws"});
-			return;
-		} else throw(e);
-	}
-	throw new js__$Boot_HaxeError("no error thrown");
-};
 var buddy_BuddySuite = function() {
 	this.timeoutMs = 5000;
 	this.suite = this.currentSuite = new buddy_TestSuite("");
@@ -693,35 +78,33 @@ var ContextTest = function() {
 	this.describe("A new Mustache.Context",buddy_TestFunc.Sync(function() {
 		var context;
 		_gthis.beforeEach(buddy_TestFunc.Sync(function() {
-			var this1 = new mustache__$Context_ContextImpl({ name : "parent", message : "hi", a : { b : "b"}},null);
-			context = this1;
+			context = new mustache__$Context_ContextImpl({ name : "parent", message : "hi", a : { b : "b"}},null);
 		}));
 		_gthis.it("is able to lookup properties of its own view",buddy_TestFunc.Sync(function() {
-			utest_Assert.equals("parent",context.lookup("name"),null,{ fileName : "Assert.hx", lineNumber : 15, className : "_Assert.A_Impl_", methodName : "equal"});
+			utest_Assert.equals("parent",context.lookup("name"),null,{ fileName : "ContextTest.hx", lineNumber : 13, className : "ContextTest", methodName : "new"});
 		}));
 		_gthis.it("is able to lookup nested properties of its own view",buddy_TestFunc.Sync(function() {
-			utest_Assert.equals("b",context.lookup("a.b"),null,{ fileName : "Assert.hx", lineNumber : 15, className : "_Assert.A_Impl_", methodName : "equal"});
+			utest_Assert.equals("b",context.lookup("a.b"),null,{ fileName : "ContextTest.hx", lineNumber : 17, className : "ContextTest", methodName : "new"});
 		}));
 		_gthis.describe("when pushed",buddy_TestFunc.Sync(function() {
 			_gthis.beforeEach(buddy_TestFunc.Sync(function() {
-				var this2 = new mustache__$Context_ContextImpl({ name : "child", c : { d : "d"}},context);
-				context = this2;
+				context = new mustache__$Context_ContextImpl({ name : "child", c : { d : "d"}},context);
 			}));
 			_gthis.it("returns the child context",buddy_TestFunc.Sync(function() {
-				utest_Assert.equals("child",context.view.name,null,{ fileName : "Assert.hx", lineNumber : 15, className : "_Assert.A_Impl_", methodName : "equal"});
-				utest_Assert.equals("parent",context.parent.view.name,null,{ fileName : "Assert.hx", lineNumber : 15, className : "_Assert.A_Impl_", methodName : "equal"});
+				utest_Assert.equals("child",context.view.name,null,{ fileName : "ContextTest.hx", lineNumber : 26, className : "ContextTest", methodName : "new"});
+				utest_Assert.equals("parent",context.parent.view.name,null,{ fileName : "ContextTest.hx", lineNumber : 27, className : "ContextTest", methodName : "new"});
 			}));
 			_gthis.it("is able to lookup properties of its own view",buddy_TestFunc.Sync(function() {
-				utest_Assert.equals("child",context.lookup("name"),null,{ fileName : "Assert.hx", lineNumber : 15, className : "_Assert.A_Impl_", methodName : "equal"});
+				utest_Assert.equals("child",context.lookup("name"),null,{ fileName : "ContextTest.hx", lineNumber : 31, className : "ContextTest", methodName : "new"});
 			}));
 			_gthis.it("is able to lookup properties of the parent context's view",buddy_TestFunc.Sync(function() {
-				utest_Assert.equals("hi",context.lookup("message"),null,{ fileName : "Assert.hx", lineNumber : 15, className : "_Assert.A_Impl_", methodName : "equal"});
+				utest_Assert.equals("hi",context.lookup("message"),null,{ fileName : "ContextTest.hx", lineNumber : 35, className : "ContextTest", methodName : "new"});
 			}));
 			_gthis.it("is able to lookup nested properties of its own view",buddy_TestFunc.Sync(function() {
-				utest_Assert.equals("d",context.lookup("c.d"),null,{ fileName : "Assert.hx", lineNumber : 15, className : "_Assert.A_Impl_", methodName : "equal"});
+				utest_Assert.equals("d",context.lookup("c.d"),null,{ fileName : "ContextTest.hx", lineNumber : 39, className : "ContextTest", methodName : "new"});
 			}));
 			_gthis.it("is able to lookup nested properties of its parent view",buddy_TestFunc.Sync(function() {
-				utest_Assert.equals("b",context.lookup("a.b"),null,{ fileName : "Assert.hx", lineNumber : 15, className : "_Assert.A_Impl_", methodName : "equal"});
+				utest_Assert.equals("b",context.lookup("a.b"),null,{ fileName : "ContextTest.hx", lineNumber : 43, className : "ContextTest", methodName : "new"});
 			}));
 		}));
 	}));
@@ -1655,46 +1038,44 @@ var ParseTest = function() {
 	this.describe("Mustache.parse",buddy_TestFunc.Sync(function() {
 		var tmp = expectations.keys();
 		while(tmp.hasNext()) {
-			var template = tmp.next();
-			var template1 = [template];
-			var tokens = [__map_reserved[template] != null?expectations.getReserved(template):expectations.h[template]];
-			_gthis.it("knows how to parse " + JSON.stringify(template1[0]),buddy_TestFunc.Sync((function(tokens1,template2) {
+			var template = [tmp.next()];
+			_gthis.it("knows how to parse " + JSON.stringify(template[0]),buddy_TestFunc.Sync((function(template1) {
 				return function() {
-					utest_Assert.same(tokens1[0],Mustache.defaultWriter.parse(template2[0],null),null,null,{ fileName : "Assert.hx", lineNumber : 16, className : "_Assert.A_Impl_", methodName : "deepEqual"});
+					utest_Assert.same(__map_reserved[template1[0]] != null?expectations.getReserved(template1[0]):expectations.h[template1[0]],Mustache.defaultWriter.parse(template1[0],null),null,null,{ fileName : "ParseTest.hx", lineNumber : 75, className : "ParseTest", methodName : "new"});
 				};
-			})(tokens,template1)));
+			})(template)));
 		}
 		_gthis.describe("when there is an unclosed tag",buddy_TestFunc.Sync(function() {
 			_gthis.it("throws an error",buddy_TestFunc.Sync(function() {
-				_$Assert_A_$Impl_$["throws"](Assert.assert,function() {
+				ParseTest["throws"](function() {
 					Mustache.defaultWriter.parse("My name is {{name",null);
 				},new EReg("unclosed tag at 17","i"));
 			}));
 		}));
 		_gthis.describe("when there is an unclosed section",buddy_TestFunc.Sync(function() {
 			_gthis.it("throws an error",buddy_TestFunc.Sync(function() {
-				_$Assert_A_$Impl_$["throws"](Assert.assert,function() {
+				ParseTest["throws"](function() {
 					Mustache.defaultWriter.parse("A list: {{#people}}{{name}}",null);
 				},new EReg("unclosed section \"people\" at 27","i"));
 			}));
 		}));
 		_gthis.describe("when there is an unopened section",buddy_TestFunc.Sync(function() {
 			_gthis.it("throws an error",buddy_TestFunc.Sync(function() {
-				_$Assert_A_$Impl_$["throws"](Assert.assert,function() {
+				ParseTest["throws"](function() {
 					Mustache.defaultWriter.parse("The end of the list! {{/people}}",null);
 				},new EReg("unopened section \"people\" at 21","i"));
 			}));
 		}));
 		_gthis.describe("when invalid tags are given as an argument",buddy_TestFunc.Sync(function() {
 			_gthis.it("throws an error",buddy_TestFunc.Sync(function() {
-				_$Assert_A_$Impl_$["throws"](Assert.assert,function() {
+				ParseTest["throws"](function() {
 					Mustache.defaultWriter.parse("A template <% name %>",["<%"]);
 				},new EReg("invalid tags","i"));
 			}));
 		}));
 		_gthis.describe("when the template contains invalid tags",buddy_TestFunc.Sync(function() {
 			_gthis.it("throws an error",buddy_TestFunc.Sync(function() {
-				_$Assert_A_$Impl_$["throws"](Assert.assert,function() {
+				ParseTest["throws"](function() {
 					Mustache.defaultWriter.parse("A template {{=<%=}}",null);
 				},new EReg("invalid tags","i"));
 			}));
@@ -1702,6 +1083,23 @@ var ParseTest = function() {
 	}));
 };
 ParseTest.__name__ = ["ParseTest"];
+ParseTest["throws"] = function(fn,re) {
+	try {
+		fn();
+	} catch( $e0 ) {
+		haxe_CallStack.lastException = $e0;
+		if ($e0 instanceof js__$Boot_HaxeError) $e0 = $e0.val;
+		if( js_Boot.__instanceof($e0,String) ) {
+			var e = $e0;
+			utest_Assert.match(re,e,null,{ fileName : "ParseTest.hx", lineNumber : 9, className : "ParseTest", methodName : "throws"});
+			return;
+		} else {
+		var e1 = $e0;
+		throw new js__$Boot_HaxeError("not string thrown");
+		}
+	}
+	throw new js__$Boot_HaxeError("no error thrown");
+};
 ParseTest.__super__ = buddy_BuddySuite;
 ParseTest.prototype = $extend(buddy_BuddySuite.prototype,{
 	__class__: ParseTest
@@ -1754,7 +1152,7 @@ var ScannerTest = function() {
 	this.describe("A new Mustache.Scanner",buddy_TestFunc.Sync(function() {
 		_gthis.describe("for an empty string",buddy_TestFunc.Sync(function() {
 			_gthis.it("is at the end",buddy_TestFunc.Sync(function() {
-				Assert.assert(new mustache_Scanner("").tail == "");
+				utest_Assert.isTrue(new mustache_Scanner("").tail == "",null,{ fileName : "ScannerTest.hx", lineNumber : 11, className : "ScannerTest", methodName : "new"});
 			}));
 		}));
 		_gthis.describe("for a non-empty string",buddy_TestFunc.Sync(function() {
@@ -1765,46 +1163,46 @@ var ScannerTest = function() {
 			_gthis.describe("scan",buddy_TestFunc.Sync(function() {
 				_gthis.describe("when the RegExp matches the entire string",buddy_TestFunc.Sync(function() {
 					_gthis.it("returns the entire string",buddy_TestFunc.Sync(function() {
-						utest_Assert.equals(scanner.string,scanner.scan(new EReg("a b c","")),null,{ fileName : "Assert.hx", lineNumber : 15, className : "_Assert.A_Impl_", methodName : "equal"});
-						Assert.assert(scanner.tail == "");
+						utest_Assert.equals(scanner.string,scanner.scan(new EReg("a b c","")),null,{ fileName : "ScannerTest.hx", lineNumber : 25, className : "ScannerTest", methodName : "new"});
+						utest_Assert.isTrue(scanner.tail == "",null,{ fileName : "ScannerTest.hx", lineNumber : 26, className : "ScannerTest", methodName : "new"});
 					}));
 				}));
 				_gthis.describe("when the RegExp matches at index 0",buddy_TestFunc.Sync(function() {
 					_gthis.it("returns the portion of the string that matched",buddy_TestFunc.Sync(function() {
-						utest_Assert.equals("a",scanner.scan(new EReg("a","")),null,{ fileName : "Assert.hx", lineNumber : 15, className : "_Assert.A_Impl_", methodName : "equal"});
-						utest_Assert.equals(1,scanner.pos,null,{ fileName : "Assert.hx", lineNumber : 15, className : "_Assert.A_Impl_", methodName : "equal"});
+						utest_Assert.equals("a",scanner.scan(new EReg("a","")),null,{ fileName : "ScannerTest.hx", lineNumber : 33, className : "ScannerTest", methodName : "new"});
+						utest_Assert.equals(1,scanner.pos,null,{ fileName : "ScannerTest.hx", lineNumber : 34, className : "ScannerTest", methodName : "new"});
 					}));
 				}));
 				_gthis.describe("when the RegExp matches at some index other than 0",buddy_TestFunc.Sync(function() {
 					_gthis.it("returns the empty string",buddy_TestFunc.Sync(function() {
-						utest_Assert.equals("",scanner.scan(new EReg("b","")),null,{ fileName : "Assert.hx", lineNumber : 15, className : "_Assert.A_Impl_", methodName : "equal"});
-						utest_Assert.equals(0,scanner.pos,null,{ fileName : "Assert.hx", lineNumber : 15, className : "_Assert.A_Impl_", methodName : "equal"});
+						utest_Assert.equals("",scanner.scan(new EReg("b","")),null,{ fileName : "ScannerTest.hx", lineNumber : 41, className : "ScannerTest", methodName : "new"});
+						utest_Assert.equals(0,scanner.pos,null,{ fileName : "ScannerTest.hx", lineNumber : 42, className : "ScannerTest", methodName : "new"});
 					}));
 				}));
 				_gthis.describe("when the RegExp does not match",buddy_TestFunc.Sync(function() {
 					_gthis.it("returns the empty string",buddy_TestFunc.Sync(function() {
-						utest_Assert.equals("",scanner.scan(new EReg("z","")),null,{ fileName : "Assert.hx", lineNumber : 15, className : "_Assert.A_Impl_", methodName : "equal"});
-						utest_Assert.equals(0,scanner.pos,null,{ fileName : "Assert.hx", lineNumber : 15, className : "_Assert.A_Impl_", methodName : "equal"});
+						utest_Assert.equals("",scanner.scan(new EReg("z","")),null,{ fileName : "ScannerTest.hx", lineNumber : 49, className : "ScannerTest", methodName : "new"});
+						utest_Assert.equals(0,scanner.pos,null,{ fileName : "ScannerTest.hx", lineNumber : 50, className : "ScannerTest", methodName : "new"});
 					}));
 				}));
 			}));
 			_gthis.describe("scanUntil",buddy_TestFunc.Sync(function() {
 				_gthis.describe("when the RegExp matches at index 0",buddy_TestFunc.Sync(function() {
 					_gthis.it("returns the empty string",buddy_TestFunc.Sync(function() {
-						utest_Assert.equals("",scanner.scanUntil(new EReg("a","")),null,{ fileName : "Assert.hx", lineNumber : 15, className : "_Assert.A_Impl_", methodName : "equal"});
-						utest_Assert.equals(0,scanner.pos,null,{ fileName : "Assert.hx", lineNumber : 15, className : "_Assert.A_Impl_", methodName : "equal"});
+						utest_Assert.equals("",scanner.scanUntil(new EReg("a","")),null,{ fileName : "ScannerTest.hx", lineNumber : 59, className : "ScannerTest", methodName : "new"});
+						utest_Assert.equals(0,scanner.pos,null,{ fileName : "ScannerTest.hx", lineNumber : 60, className : "ScannerTest", methodName : "new"});
 					}));
 				}));
 				_gthis.describe("when the RegExp matches at some index other than 0",buddy_TestFunc.Sync(function() {
 					_gthis.it("returns the string up to that index",buddy_TestFunc.Sync(function() {
-						utest_Assert.equals("a ",scanner.scanUntil(new EReg("b","")),null,{ fileName : "Assert.hx", lineNumber : 15, className : "_Assert.A_Impl_", methodName : "equal"});
-						utest_Assert.equals(2,scanner.pos,null,{ fileName : "Assert.hx", lineNumber : 15, className : "_Assert.A_Impl_", methodName : "equal"});
+						utest_Assert.equals("a ",scanner.scanUntil(new EReg("b","")),null,{ fileName : "ScannerTest.hx", lineNumber : 67, className : "ScannerTest", methodName : "new"});
+						utest_Assert.equals(2,scanner.pos,null,{ fileName : "ScannerTest.hx", lineNumber : 68, className : "ScannerTest", methodName : "new"});
 					}));
 				}));
 				_gthis.describe("when the RegExp does not match",buddy_TestFunc.Sync(function() {
 					_gthis.it("returns the entire string",buddy_TestFunc.Sync(function() {
-						utest_Assert.equals(scanner.string,scanner.scanUntil(new EReg("z","")),null,{ fileName : "Assert.hx", lineNumber : 15, className : "_Assert.A_Impl_", methodName : "equal"});
-						Assert.assert(scanner.tail == "");
+						utest_Assert.equals(scanner.string,scanner.scanUntil(new EReg("z","")),null,{ fileName : "ScannerTest.hx", lineNumber : 75, className : "ScannerTest", methodName : "new"});
+						utest_Assert.isTrue(scanner.tail == "",null,{ fileName : "ScannerTest.hx", lineNumber : 76, className : "ScannerTest", methodName : "new"});
 					}));
 				}));
 			}));
@@ -4549,6 +3947,591 @@ promhx_base_EventLoop.continueOnNextLoop = function() {
 var promhx_error_PromiseError = { __ename__ : ["promhx","error","PromiseError"], __constructs__ : ["AlreadyResolved","DownstreamNotFullfilled"] };
 promhx_error_PromiseError.AlreadyResolved = function(message) { var $x = ["AlreadyResolved",0,message]; $x.__enum__ = promhx_error_PromiseError; $x.toString = $estr; return $x; };
 promhx_error_PromiseError.DownstreamNotFullfilled = function(message) { var $x = ["DownstreamNotFullfilled",1,message]; $x.__enum__ = promhx_error_PromiseError; $x.toString = $estr; return $x; };
+var utest_Assert = function() { };
+utest_Assert.__name__ = ["utest","Assert"];
+utest_Assert.isTrue = function(cond,msg,pos) {
+	if(utest_Assert.results == null) {
+		throw new js__$Boot_HaxeError("Assert.results is not currently bound to any assert context");
+	}
+	if(null == msg) {
+		msg = "expected true";
+	}
+	if(cond) {
+		utest_Assert.results.add(utest_Assertation.Success(pos));
+	} else {
+		utest_Assert.results.add(utest_Assertation.Failure(msg,pos));
+	}
+};
+utest_Assert.isFalse = function(value,msg,pos) {
+	if(null == msg) {
+		msg = "expected false";
+	}
+	utest_Assert.isTrue(value == false,msg,pos);
+};
+utest_Assert.isNull = function(value,msg,pos) {
+	if(msg == null) {
+		msg = "expected null but it is " + utest_Assert.q(value);
+	}
+	utest_Assert.isTrue(value == null,msg,pos);
+};
+utest_Assert.notNull = function(value,msg,pos) {
+	if(null == msg) {
+		msg = "expected not null";
+	}
+	utest_Assert.isTrue(value != null,msg,pos);
+};
+utest_Assert["is"] = function(value,type,msg,pos) {
+	if(msg == null) {
+		msg = "expected type " + utest_Assert.typeToString(type) + " but it is " + utest_Assert.typeToString(value);
+	}
+	utest_Assert.isTrue(js_Boot.__instanceof(value,type),msg,pos);
+};
+utest_Assert.notEquals = function(expected,value,msg,pos) {
+	if(msg == null) {
+		msg = "expected " + utest_Assert.q(expected) + " and test value " + utest_Assert.q(value) + " should be different";
+	}
+	utest_Assert.isFalse(expected == value,msg,pos);
+};
+utest_Assert.equals = function(expected,value,msg,pos) {
+	if(msg == null) {
+		msg = "expected " + utest_Assert.q(expected) + " but it is " + utest_Assert.q(value);
+	}
+	utest_Assert.isTrue(expected == value,msg,pos);
+};
+utest_Assert.match = function(pattern,value,msg,pos) {
+	if(msg == null) {
+		msg = "the value " + utest_Assert.q(value) + " does not match the provided pattern";
+	}
+	utest_Assert.isTrue(pattern.match(value),msg,pos);
+};
+utest_Assert.floatEquals = function(expected,value,approx,msg,pos) {
+	if(msg == null) {
+		msg = "expected " + utest_Assert.q(expected) + " but it is " + utest_Assert.q(value);
+	}
+	utest_Assert.isTrue(utest_Assert._floatEquals(expected,value,approx),msg,pos);
+	return;
+};
+utest_Assert._floatEquals = function(expected,value,approx) {
+	if(isNaN(expected)) {
+		return isNaN(value);
+	} else if(isNaN(value)) {
+		return false;
+	} else if(!isFinite(expected) && !isFinite(value)) {
+		return expected > 0 == value > 0;
+	}
+	if(null == approx) {
+		approx = 1e-5;
+	}
+	return Math.abs(value - expected) <= approx;
+};
+utest_Assert.getTypeName = function(v) {
+	var _g = Type["typeof"](v);
+	switch(_g[1]) {
+	case 0:
+		return "`null`";
+	case 1:
+		return "Int";
+	case 2:
+		return "Float";
+	case 3:
+		return "Bool";
+	case 4:
+		return "Object";
+	case 5:
+		return "function";
+	case 6:
+		return Type.getClassName(_g[2]);
+	case 7:
+		return Type.getEnumName(_g[2]);
+	case 8:
+		return "`Unknown`";
+	}
+};
+utest_Assert.isIterable = function(v,isAnonym) {
+	if(!Lambda.has(isAnonym?Reflect.fields(v):Type.getInstanceFields(v == null?null:js_Boot.getClass(v)),"iterator")) {
+		return false;
+	}
+	return Reflect.isFunction(Reflect.field(v,"iterator"));
+};
+utest_Assert.isIterator = function(v,isAnonym) {
+	var fields = isAnonym?Reflect.fields(v):Type.getInstanceFields(v == null?null:js_Boot.getClass(v));
+	if(!Lambda.has(fields,"next") || !Lambda.has(fields,"hasNext")) {
+		return false;
+	}
+	if(Reflect.isFunction(Reflect.field(v,"next"))) {
+		return Reflect.isFunction(Reflect.field(v,"hasNext"));
+	} else {
+		return false;
+	}
+};
+utest_Assert.sameAs = function(expected,value,status) {
+	var texpected = utest_Assert.getTypeName(expected);
+	var tvalue = utest_Assert.getTypeName(value);
+	if(texpected != tvalue) {
+		status.error = "expected type " + texpected + " but it is " + tvalue + (status.path == ""?"":" for field " + status.path);
+		return false;
+	}
+	var _g = Type["typeof"](expected);
+	switch(_g[1]) {
+	case 0:case 1:case 3:
+		if(expected != value) {
+			status.error = "expected " + utest_Assert.q(expected) + " but it is " + utest_Assert.q(value) + (status.path == ""?"":" for field " + status.path);
+			return false;
+		}
+		return true;
+	case 2:
+		if(!utest_Assert._floatEquals(expected,value)) {
+			status.error = "expected " + utest_Assert.q(expected) + " but it is " + utest_Assert.q(value) + (status.path == ""?"":" for field " + status.path);
+			return false;
+		}
+		return true;
+	case 4:
+		if(status.recursive || status.path == "") {
+			var tfields = Reflect.fields(value);
+			var fields = Reflect.fields(expected);
+			var path = status.path;
+			var _g1 = 0;
+			while(_g1 < fields.length) {
+				var field = fields[_g1];
+				++_g1;
+				HxOverrides.remove(tfields,field);
+				status.path = path == ""?field:path + "." + field;
+				if(!Object.prototype.hasOwnProperty.call(value,field)) {
+					status.error = "expected field " + status.path + " does not exist in " + utest_Assert.q(value);
+					return false;
+				}
+				var e = Reflect.field(expected,field);
+				if(Reflect.isFunction(e)) {
+					continue;
+				}
+				if(!utest_Assert.sameAs(e,Reflect.field(value,field),status)) {
+					return false;
+				}
+			}
+			if(tfields.length > 0) {
+				status.error = "the tested object has extra field(s) (" + tfields.join(", ") + ") not included in the expected ones";
+				return false;
+			}
+		}
+		if(utest_Assert.isIterator(expected,true)) {
+			if(!utest_Assert.isIterator(value,true)) {
+				status.error = "expected Iterable but it is not " + (status.path == ""?"":" for field " + status.path);
+				return false;
+			}
+			if(status.recursive || status.path == "") {
+				var evalues = Lambda.array({ iterator : function() {
+					return expected;
+				}});
+				var vvalues = Lambda.array({ iterator : function() {
+					return value;
+				}});
+				if(evalues.length != vvalues.length) {
+					status.error = "expected " + evalues.length + " values in Iterator but they are " + vvalues.length + (status.path == ""?"":" for field " + status.path);
+					return false;
+				}
+				var path1 = status.path;
+				var _g11 = 0;
+				var _g2 = evalues.length;
+				while(_g11 < _g2) {
+					var i = _g11++;
+					status.path = path1 == ""?"iterator[" + i + "]":path1 + "[" + i + "]";
+					if(!utest_Assert.sameAs(evalues[i],vvalues[i],status)) {
+						status.error = "expected " + utest_Assert.q(expected) + " but it is " + utest_Assert.q(value) + (status.path == ""?"":" for field " + status.path);
+						return false;
+					}
+				}
+			}
+			return true;
+		}
+		if(utest_Assert.isIterable(expected,true)) {
+			if(!utest_Assert.isIterable(value,true)) {
+				status.error = "expected Iterator but it is not " + (status.path == ""?"":" for field " + status.path);
+				return false;
+			}
+			if(status.recursive || status.path == "") {
+				var evalues1 = Lambda.array(expected);
+				var vvalues1 = Lambda.array(value);
+				if(evalues1.length != vvalues1.length) {
+					status.error = "expected " + evalues1.length + " values in Iterable but they are " + vvalues1.length + (status.path == ""?"":" for field " + status.path);
+					return false;
+				}
+				var path2 = status.path;
+				var _g12 = 0;
+				var _g3 = evalues1.length;
+				while(_g12 < _g3) {
+					var i1 = _g12++;
+					status.path = path2 == ""?"iterable[" + i1 + "]":path2 + "[" + i1 + "]";
+					if(!utest_Assert.sameAs(evalues1[i1],vvalues1[i1],status)) {
+						return false;
+					}
+				}
+			}
+			return true;
+		}
+		return true;
+	case 5:
+		if(!Reflect.compareMethods(expected,value)) {
+			status.error = "expected same function reference" + (status.path == ""?"":" for field " + status.path);
+			return false;
+		}
+		return true;
+	case 6:
+		var cexpected = Type.getClassName(_g[2]);
+		var o = value;
+		var cvalue = Type.getClassName(o == null?null:js_Boot.getClass(o));
+		if(cexpected != cvalue) {
+			status.error = "expected instance of " + utest_Assert.q(cexpected) + " but it is " + utest_Assert.q(cvalue) + (status.path == ""?"":" for field " + status.path);
+			return false;
+		}
+		if(typeof(expected) == "string" && expected != value) {
+			status.error = "expected '" + Std.string(expected) + "' but it is '" + Std.string(value) + "'";
+			return false;
+		}
+		if((expected instanceof Array) && expected.__enum__ == null) {
+			if(status.recursive || status.path == "") {
+				if(expected.length != value.length) {
+					status.error = "expected " + Std.string(expected.length) + " elements but they are " + Std.string(value.length) + (status.path == ""?"":" for field " + status.path);
+					return false;
+				}
+				var path3 = status.path;
+				var _g13 = 0;
+				var _g4 = expected.length;
+				while(_g13 < _g4) {
+					var i2 = _g13++;
+					status.path = path3 == ""?"array[" + i2 + "]":path3 + "[" + i2 + "]";
+					if(!utest_Assert.sameAs(expected[i2],value[i2],status)) {
+						status.error = "expected " + utest_Assert.q(expected[i2]) + " but it is " + utest_Assert.q(value[i2]) + (status.path == ""?"":" for field " + status.path);
+						return false;
+					}
+				}
+			}
+			return true;
+		}
+		if(js_Boot.__instanceof(expected,Date)) {
+			if(expected.getTime() != value.getTime()) {
+				status.error = "expected " + utest_Assert.q(expected) + " but it is " + utest_Assert.q(value) + (status.path == ""?"":" for field " + status.path);
+				return false;
+			}
+			return true;
+		}
+		if(js_Boot.__instanceof(expected,haxe_io_Bytes)) {
+			if(status.recursive || status.path == "") {
+				var ebytes = expected;
+				var vbytes = value;
+				if(ebytes.length != vbytes.length) {
+					return false;
+				}
+				var _g14 = 0;
+				var _g5 = ebytes.length;
+				while(_g14 < _g5) {
+					var i3 = _g14++;
+					if(ebytes.b[i3] != vbytes.b[i3]) {
+						status.error = "expected byte " + ebytes.b[i3] + " but it is " + vbytes.b[i3] + (status.path == ""?"":" for field " + status.path);
+						return false;
+					}
+				}
+			}
+			return true;
+		}
+		if(js_Boot.__instanceof(expected,haxe_IMap)) {
+			if(status.recursive || status.path == "") {
+				var map = js_Boot.__cast(expected , haxe_IMap);
+				var vmap = js_Boot.__cast(value , haxe_IMap);
+				var _g6 = [];
+				var tmp = map.keys();
+				while(tmp.hasNext()) _g6.push(tmp.next());
+				var keys = _g6;
+				var _g15 = [];
+				var tmp1 = vmap.keys();
+				while(tmp1.hasNext()) _g15.push(tmp1.next());
+				var vkeys = _g15;
+				if(keys.length != vkeys.length) {
+					status.error = "expected " + keys.length + " keys but they are " + vkeys.length + (status.path == ""?"":" for field " + status.path);
+					return false;
+				}
+				var path4 = status.path;
+				var _g21 = 0;
+				while(_g21 < keys.length) {
+					var key = keys[_g21];
+					++_g21;
+					status.path = path4 == ""?"hash[" + Std.string(key) + "]":path4 + "[" + Std.string(key) + "]";
+					if(!utest_Assert.sameAs(map.get(key),vmap.get(key),status)) {
+						status.error = "expected " + utest_Assert.q(expected) + " but it is " + utest_Assert.q(value) + (status.path == ""?"":" for field " + status.path);
+						return false;
+					}
+				}
+			}
+			return true;
+		}
+		if(utest_Assert.isIterator(expected,false)) {
+			if(status.recursive || status.path == "") {
+				var evalues2 = Lambda.array({ iterator : function() {
+					return expected;
+				}});
+				var vvalues2 = Lambda.array({ iterator : function() {
+					return value;
+				}});
+				if(evalues2.length != vvalues2.length) {
+					status.error = "expected " + evalues2.length + " values in Iterator but they are " + vvalues2.length + (status.path == ""?"":" for field " + status.path);
+					return false;
+				}
+				var path5 = status.path;
+				var _g16 = 0;
+				var _g7 = evalues2.length;
+				while(_g16 < _g7) {
+					var i4 = _g16++;
+					status.path = path5 == ""?"iterator[" + i4 + "]":path5 + "[" + i4 + "]";
+					if(!utest_Assert.sameAs(evalues2[i4],vvalues2[i4],status)) {
+						status.error = "expected " + utest_Assert.q(expected) + " but it is " + utest_Assert.q(value) + (status.path == ""?"":" for field " + status.path);
+						return false;
+					}
+				}
+			}
+			return true;
+		}
+		if(utest_Assert.isIterable(expected,false)) {
+			if(status.recursive || status.path == "") {
+				var evalues3 = Lambda.array(expected);
+				var vvalues3 = Lambda.array(value);
+				if(evalues3.length != vvalues3.length) {
+					status.error = "expected " + evalues3.length + " values in Iterable but they are " + vvalues3.length + (status.path == ""?"":" for field " + status.path);
+					return false;
+				}
+				var path6 = status.path;
+				var _g17 = 0;
+				var _g8 = evalues3.length;
+				while(_g17 < _g8) {
+					var i5 = _g17++;
+					status.path = path6 == ""?"iterable[" + i5 + "]":path6 + "[" + i5 + "]";
+					if(!utest_Assert.sameAs(evalues3[i5],vvalues3[i5],status)) {
+						return false;
+					}
+				}
+			}
+			return true;
+		}
+		if(status.recursive || status.path == "") {
+			var o1 = expected;
+			var fields1 = Type.getInstanceFields(o1 == null?null:js_Boot.getClass(o1));
+			var path7 = status.path;
+			var _g9 = 0;
+			while(_g9 < fields1.length) {
+				var field1 = fields1[_g9];
+				++_g9;
+				status.path = path7 == ""?field1:path7 + "." + field1;
+				var e1 = Reflect.field(expected,field1);
+				if(Reflect.isFunction(e1)) {
+					continue;
+				}
+				if(!utest_Assert.sameAs(e1,Reflect.field(value,field1),status)) {
+					return false;
+				}
+			}
+		}
+		return true;
+	case 7:
+		var eexpected = Type.getEnumName(_g[2]);
+		var evalue = Type.getEnumName(Type.getEnum(value));
+		if(eexpected != evalue) {
+			status.error = "expected enumeration of " + utest_Assert.q(eexpected) + " but it is " + utest_Assert.q(evalue) + (status.path == ""?"":" for field " + status.path);
+			return false;
+		}
+		if(status.recursive || status.path == "") {
+			if(expected[1] != value[1]) {
+				status.error = "expected " + utest_Assert.q(expected[0]) + " but it is " + utest_Assert.q(value[0]) + (status.path == ""?"":" for field " + status.path);
+				return false;
+			}
+			var eparams = expected.slice(2);
+			var vparams = value.slice(2);
+			var path8 = status.path;
+			var _g18 = 0;
+			var _g10 = eparams.length;
+			while(_g18 < _g10) {
+				var i6 = _g18++;
+				status.path = path8 == ""?"enum[" + i6 + "]":path8 + "[" + i6 + "]";
+				if(!utest_Assert.sameAs(eparams[i6],vparams[i6],status)) {
+					status.error = "expected " + utest_Assert.q(expected) + " but it is " + utest_Assert.q(value) + (status.path == ""?"":" for field " + status.path);
+					return false;
+				}
+			}
+		}
+		return true;
+	case 8:
+		throw new js__$Boot_HaxeError("Unable to compare two unknown types");
+		break;
+	}
+};
+utest_Assert.q = function(v) {
+	if(typeof(v) == "string") {
+		return "\"" + StringTools.replace(v,"\"","\\\"") + "\"";
+	} else {
+		return Std.string(v);
+	}
+};
+utest_Assert.same = function(expected,value,recursive,msg,pos) {
+	var status = { recursive : null == recursive?true:recursive, path : "", error : null};
+	if(utest_Assert.sameAs(expected,value,status)) {
+		utest_Assert.pass(msg,pos);
+	} else {
+		utest_Assert.fail(msg == null?status.error:msg,pos);
+	}
+};
+utest_Assert.raises = function(method,type,msgNotThrown,msgWrongType,pos) {
+	try {
+		method();
+		var name = Type.getClassName(type);
+		if(name == null) {
+			name = "Dynamic";
+		}
+		if(null == msgNotThrown) {
+			msgNotThrown = "exception of type " + name + " not raised";
+		}
+		utest_Assert.fail(msgNotThrown,pos);
+	} catch( ex ) {
+		haxe_CallStack.lastException = ex;
+		if (ex instanceof js__$Boot_HaxeError) ex = ex.val;
+		if(null == type) {
+			utest_Assert.pass(null,pos);
+		} else {
+			var name1 = Type.getClassName(type);
+			if(null == msgWrongType) {
+				msgWrongType = "expected throw of type " + name1 + " but it is " + Std.string(ex);
+			}
+			utest_Assert.isTrue(js_Boot.__instanceof(ex,type),msgWrongType,pos);
+		}
+	}
+};
+utest_Assert.allows = function(possibilities,value,msg,pos) {
+	if(Lambda.has(possibilities,value)) {
+		utest_Assert.isTrue(true,msg,pos);
+	} else {
+		utest_Assert.fail(msg == null?"value " + utest_Assert.q(value) + " not found in the expected possibilities " + Std.string(possibilities):msg,pos);
+	}
+};
+utest_Assert.contains = function(match,values,msg,pos) {
+	if(Lambda.has(values,match)) {
+		utest_Assert.isTrue(true,msg,pos);
+	} else {
+		utest_Assert.fail(msg == null?"values " + utest_Assert.q(values) + " do not contain " + Std.string(match):msg,pos);
+	}
+};
+utest_Assert.notContains = function(match,values,msg,pos) {
+	if(!Lambda.has(values,match)) {
+		utest_Assert.isTrue(true,msg,pos);
+	} else {
+		utest_Assert.fail(msg == null?"values " + utest_Assert.q(values) + " do contain " + Std.string(match):msg,pos);
+	}
+};
+utest_Assert.stringContains = function(match,value,msg,pos) {
+	if(value != null && value.indexOf(match) >= 0) {
+		utest_Assert.isTrue(true,msg,pos);
+	} else {
+		utest_Assert.fail(msg == null?"value " + utest_Assert.q(value) + " does not contain " + utest_Assert.q(match):msg,pos);
+	}
+};
+utest_Assert.stringSequence = function(sequence,value,msg,pos) {
+	if(null == value) {
+		utest_Assert.fail(msg == null?"null argument value":msg,pos);
+		return;
+	}
+	var p = 0;
+	var _g = 0;
+	while(_g < sequence.length) {
+		var s = sequence[_g];
+		++_g;
+		var p2 = value.indexOf(s,p);
+		if(p2 < 0) {
+			if(msg == null) {
+				msg = "expected '" + s + "' after ";
+				if(p > 0) {
+					var cut = HxOverrides.substr(value,0,p);
+					if(cut.length > 30) {
+						cut = "..." + HxOverrides.substr(cut,-27,null);
+					}
+					msg += " '" + cut + "'";
+				} else {
+					msg += " begin";
+				}
+			}
+			utest_Assert.fail(msg,pos);
+			return;
+		}
+		p = p2 + s.length;
+	}
+	utest_Assert.isTrue(true,msg,pos);
+};
+utest_Assert.pass = function(msg,pos) {
+	if(msg == null) {
+		msg = "pass expected";
+	}
+	utest_Assert.isTrue(true,msg,pos);
+};
+utest_Assert.fail = function(msg,pos) {
+	if(msg == null) {
+		msg = "failure expected";
+	}
+	utest_Assert.isTrue(false,msg,pos);
+};
+utest_Assert.warn = function(msg) {
+	utest_Assert.results.add(utest_Assertation.Warning(msg));
+};
+utest_Assert.createAsync = function(f,timeout) {
+	return function() {
+	};
+};
+utest_Assert.createEvent = function(f,timeout) {
+	return function(e) {
+	};
+};
+utest_Assert.typeToString = function(t) {
+	try {
+		var o = t;
+		var _t = o == null?null:js_Boot.getClass(o);
+		if(_t != null) {
+			t = _t;
+		}
+	} catch( e ) {
+		haxe_CallStack.lastException = e;
+	}
+	try {
+		return Type.getClassName(t);
+	} catch( e1 ) {
+		haxe_CallStack.lastException = e1;
+	}
+	try {
+		var _t1 = Type.getEnum(t);
+		if(_t1 != null) {
+			t = _t1;
+		}
+	} catch( e2 ) {
+		haxe_CallStack.lastException = e2;
+	}
+	try {
+		return Type.getEnumName(t);
+	} catch( e3 ) {
+		haxe_CallStack.lastException = e3;
+	}
+	try {
+		return Std.string(Type["typeof"](t));
+	} catch( e4 ) {
+		haxe_CallStack.lastException = e4;
+	}
+	try {
+		return Std.string(t);
+	} catch( e5 ) {
+		haxe_CallStack.lastException = e5;
+	}
+	return "<unable to retrieve type name>";
+};
+var utest_Assertation = { __ename__ : ["utest","Assertation"], __constructs__ : ["Success","Failure","Error","SetupError","TeardownError","TimeoutError","AsyncError","Warning"] };
+utest_Assertation.Success = function(pos) { var $x = ["Success",0,pos]; $x.__enum__ = utest_Assertation; $x.toString = $estr; return $x; };
+utest_Assertation.Failure = function(msg,pos) { var $x = ["Failure",1,msg,pos]; $x.__enum__ = utest_Assertation; $x.toString = $estr; return $x; };
+utest_Assertation.Error = function(e,stack) { var $x = ["Error",2,e,stack]; $x.__enum__ = utest_Assertation; $x.toString = $estr; return $x; };
+utest_Assertation.SetupError = function(e,stack) { var $x = ["SetupError",3,e,stack]; $x.__enum__ = utest_Assertation; $x.toString = $estr; return $x; };
+utest_Assertation.TeardownError = function(e,stack) { var $x = ["TeardownError",4,e,stack]; $x.__enum__ = utest_Assertation; $x.toString = $estr; return $x; };
+utest_Assertation.TimeoutError = function(missedAsyncs,stack) { var $x = ["TimeoutError",5,missedAsyncs,stack]; $x.__enum__ = utest_Assertation; $x.toString = $estr; return $x; };
+utest_Assertation.AsyncError = function(e,stack) { var $x = ["AsyncError",6,e,stack]; $x.__enum__ = utest_Assertation; $x.toString = $estr; return $x; };
+utest_Assertation.Warning = function(msg) { var $x = ["Warning",7,msg]; $x.__enum__ = utest_Assertation; $x.toString = $estr; return $x; };
 function $iterator(o) { if( o instanceof Array ) return function() { return HxOverrides.iter(o); }; return typeof(o.iterator) == 'function' ? $bind(o,o.iterator) : o.iterator; }
 var $_, $fid = 0;
 function $bind(o,m) { if( m == null ) return null; if( m.__id__ == null ) m.__id__ = $fid++; var f; if( o.hx__closures__ == null ) o.hx__closures__ = {}; else f = o.hx__closures__[m.__id__]; if( f == null ) { f = function(){ return f.method.apply(f.scope, arguments); }; f.scope = o; f.method = m; o.hx__closures__[m.__id__] = f; } return f; }
@@ -4566,9 +4549,6 @@ Bool.__ename__ = ["Bool"];
 var Class = { __name__ : ["Class"]};
 var Enum = { };
 var __map_reserved = {}
-Assert.assert = function(b) {
-	utest_Assert.isTrue(b,null,{ fileName : "Assert.hx", lineNumber : 14, className : "_Assert.A_Impl_", methodName : "_new"});
-};
 Mustache.tags = ["{{","}}"];
 Mustache.tagRe = new EReg("#|\\^|/|>|\\{|&|=|!","");
 Mustache.whiteRe = new EReg("\\s*","");

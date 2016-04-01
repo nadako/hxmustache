@@ -1,6 +1,4 @@
-import Assert.assert;
-
-import mustache.Context;
+import utest.Assert;
 
 class ContextTest extends buddy.BuddySuite {
     public function new() {
@@ -8,15 +6,15 @@ class ContextTest extends buddy.BuddySuite {
         describe('A new Mustache.Context', function () {
             var context;
             beforeEach(function () {
-                context = new Context({ name: 'parent', message: 'hi', a: { b: 'b' } });
+                context = new mustache.Context({ name: 'parent', message: 'hi', a: { b: 'b' } });
             });
 
             it('is able to lookup properties of its own view', function () {
-                assert.equal(context.lookup('name'), 'parent');
+                Assert.equals('parent', context.lookup('name'));
             });
 
             it('is able to lookup nested properties of its own view', function () {
-                assert.equal(context.lookup('a.b'), 'b');
+                Assert.equals('b', context.lookup('a.b'));
             });
 
             describe('when pushed', function () {
@@ -25,24 +23,24 @@ class ContextTest extends buddy.BuddySuite {
                 });
 
                 it('returns the child context', function () {
-                    assert.equal((untyped context.view.name : String), 'child');
-                    assert.equal((untyped context.parent.view.name : String), 'parent');
+                    Assert.equals('child', context.view.name);
+                    Assert.equals('parent', context.parent.view.name);
                 });
 
                 it('is able to lookup properties of its own view', function () {
-                    assert.equal(context.lookup('name'), 'child');
+                    Assert.equals('child', context.lookup('name'));
                 });
 
                 it("is able to lookup properties of the parent context's view", function () {
-                    assert.equal(context.lookup('message'), 'hi');
+                    Assert.equals('hi', context.lookup('message'));
                 });
 
                 it('is able to lookup nested properties of its own view', function () {
-                    assert.equal(context.lookup('c.d'), 'd');
+                    Assert.equals('d', context.lookup('c.d'));
                 });
 
                 it('is able to lookup nested properties of its parent view', function () {
-                    assert.equal(context.lookup('a.b'), 'b');
+                    Assert.equals('b', context.lookup('a.b'));
                 });
             });
         });

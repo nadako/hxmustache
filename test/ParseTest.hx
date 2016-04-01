@@ -1,15 +1,22 @@
-import Assert.assert;
-
+import utest.Assert;
 import mustache.Context;
 import mustache.Token;
 
 class ParseTest extends buddy.BuddySuite {
 
+    static function throws(fn:Void->Void, re:EReg) {
+        try fn() catch(e:String) {
+            utest.Assert.match(re, e);
+            return;
+        } catch (e:Dynamic) {
+            throw "not string thrown";
+        }
+        throw "no error thrown";
+    }
+
     public function new() {
         super();
-        // A map of templates to their expected token output. Tokens are in the format:
-        // [type, value, startIndex, endIndex, subTokens].
-        var expectations:Map<String,Array<mustache.Token>> = [
+        var expectations = [
             ''                                        => [],
             '{{hi}}'                                  => [ new Token( Value, 'hi', 0, 6 ) ],
             '{{hi.world}}'                            => [ new Token( Value, 'hi.world', 0, 12 ) ],
@@ -64,16 +71,14 @@ class ParseTest extends buddy.BuddySuite {
         describe('Mustache.parse', function () {
 
             for (template in expectations.keys()) {
-                (function (template, tokens) {
-                    it('knows how to parse ' + haxe.Json.stringify(template), function () {
-                        assert.deepEqual(Mustache.parse(template), tokens);
-                    });
-                })(template, expectations[template]);
+                it('knows how to parse ' + haxe.Json.stringify(template), function () {
+                    Assert.same(expectations[template], Mustache.parse(template));
+                });
             }
 
             describe('when there is an unclosed tag', function () {
                 it('throws an error', function () {
-                    assert.throws(function () {
+                    throws(function () {
                         Mustache.parse('My name is {{name');
                     }, ~/unclosed tag at 17/i);
                 });
@@ -81,7 +86,7 @@ class ParseTest extends buddy.BuddySuite {
 
             describe('when there is an unclosed section', function () {
                 it('throws an error', function () {
-                    assert.throws(function () {
+                    throws(function () {
                         Mustache.parse('A list: {{#people}}{{name}}');
                     }, ~/unclosed section "people" at 27/i);
                 });
@@ -89,7 +94,7 @@ class ParseTest extends buddy.BuddySuite {
 
             describe('when there is an unopened section', function () {
                 it('throws an error', function () {
-                    assert.throws(function () {
+                    throws(function () {
                         Mustache.parse('The end of the list! {{/people}}');
                     }, ~/unopened section "people" at 21/i);
                 });
@@ -97,7 +102,7 @@ class ParseTest extends buddy.BuddySuite {
 
             describe('when invalid tags are given as an argument', function () {
                 it('throws an error', function () {
-                    assert.throws(function () {
+                    throws(function () {
                         Mustache.parse('A template <% name %>', [ '<%' ]);
                     }, ~/invalid tags/i);
                 });
@@ -105,7 +110,7 @@ class ParseTest extends buddy.BuddySuite {
 
             describe('when the template contains invalid tags', function () {
                 it('throws an error', function () {
-                    assert.throws(function () {
+                    throws(function () {
                         Mustache.parse('A template {{=<%=}}');
                     }, ~/invalid tags/i);
                 });
