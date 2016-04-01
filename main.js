@@ -416,7 +416,7 @@ mustache_Writer.prototype = {
 				value = this.escapedValue(token,context);
 				break;
 			case 2:
-				value = context.lookup(token.value);
+				value = this.unescapedValue(token,context);
 				break;
 			case 3:
 				value = this.renderSection(token,context,partials,originalTemplate);
@@ -511,7 +511,12 @@ mustache_Writer.prototype = {
 		return null;
 	}
 	,unescapedValue: function(token,context) {
-		return context.lookup(token.value);
+		var value = context.lookup(token.value);
+		if(value != null) {
+			return Std.string(value);
+		} else {
+			return null;
+		}
 	}
 	,escapedValue: function(token,context) {
 		var value = context.lookup(token.value);
@@ -1408,7 +1413,7 @@ var TestSpec = function() {
 										};
 									})();
 									var _this = Mustache.defaultWriter;
-									utest_Assert.equals(test1[0].expected,_this.renderTokens(_this.parse(template),context,partials,template),null,{ fileName : "TestSpec.hx", lineNumber : 71, className : "TestSpec", methodName : "new"});
+									utest_Assert.equals(test1[0].expected,_this.renderTokens(_this.parse(template),context,partials,template),null,{ fileName : "TestSpec.hx", lineNumber : 69, className : "TestSpec", methodName : "new"});
 								};
 							})(test)));
 						}
