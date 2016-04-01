@@ -450,13 +450,9 @@ mustache_Writer.prototype = {
 		case 1:case 2:case 4:
 			return this.renderTokens(token.subTokens,new mustache__$Context_ContextImpl(value,context),partials,originalTemplate);
 		case 5:
-			value = value(context.view,originalTemplate.substring(token.endIndex,token.sectionEndIndex),function(template) {
+			return value(context.view,originalTemplate.substring(token.endIndex,token.sectionEndIndex),function(template) {
 				return _gthis.render(template,context,partials);
 			});
-			if(value != null) {
-				return value;
-			}
-			break;
 		case 6:
 			switch(_g[2]) {
 			case Array:

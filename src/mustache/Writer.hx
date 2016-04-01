@@ -69,9 +69,7 @@ class Writer {
                 return renderTokens(token.subTokens, context.push(value), partials, originalTemplate);
             case TFunction:
                 // Extract the portion of the original template that the section contains.
-                value = value(context.view, originalTemplate.substring(token.endIndex, token.sectionEndIndex), function(template) return render(template, context, partials));
-                if (value != null)
-                    return value;
+                return value(context.view, originalTemplate.substring(token.endIndex, token.sectionEndIndex), function(template) return render(template, context, partials));
             default:
                 return renderTokens(token.subTokens, context, partials, originalTemplate);
         }
