@@ -519,15 +519,6 @@ Mustache.parseTemplate = function(template,tags) {
 	var spaces = [];
 	var hasTag = false;
 	var nonSpace = false;
-	var stripSpace = function() {
-		if(hasTag && !nonSpace) {
-			while(spaces.length > 0) tokens[spaces.pop()] = null;
-		} else {
-			spaces = [];
-		}
-		hasTag = false;
-		nonSpace = false;
-	};
 	var openingTagRe;
 	var closingTagRe;
 	var closingCurlyRe;
@@ -563,7 +554,13 @@ Mustache.parseTemplate = function(template,tags) {
 				tokens.push(new mustache_Token(mustache_TokenType.Text,chr,start,start + 1));
 				++start;
 				if(chr == "\n") {
-					stripSpace();
+					if(hasTag && !nonSpace) {
+						while(spaces.length > 0) tokens[spaces.pop()] = null;
+					} else {
+						spaces = [];
+					}
+					hasTag = false;
+					nonSpace = false;
 				}
 			}
 		}

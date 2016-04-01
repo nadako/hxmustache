@@ -36,7 +36,7 @@ class Mustache {
 
         // Strips all whitespace tokens array for the current line
         // if there was a {{#tag}} on it and otherwise only space.
-        function stripSpace() {
+        inline function stripSpace() {
             if (hasTag && !nonSpace) {
                 while (spaces.length > 0)
                     tokens[spaces.pop()] = null;
