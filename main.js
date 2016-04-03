@@ -3356,7 +3356,7 @@ promhx_base_AsyncBase.linkAll = function(all,next) {
 			}
 			next.handleResolve(_g);
 		}
-		return null;
+		return;
 	};
 	var tmp1 = $iterator(all)();
 	while(tmp1.hasNext()) {
@@ -3372,7 +3372,8 @@ promhx_base_AsyncBase.linkAll = function(all,next) {
 		}
 		a1._update.push({ async : next, linkf : (function(a21,a11,f1) {
 			return function(v1) {
-				return f1[0](a11[0],a21[0],v1);
+				f1[0](a11[0],a21[0],v1);
+				return;
 			};
 		})([a1],[_g1],f)});
 	}
@@ -3616,7 +3617,7 @@ promhx_Promise.whenAll = function(itb) {
 			}
 			next.handleResolve(_g);
 		}
-		return null;
+		return;
 	};
 	var tmp1 = $iterator(all)();
 	while(tmp1.hasNext()) {
@@ -3632,7 +3633,8 @@ promhx_Promise.whenAll = function(itb) {
 		}
 		a1._update.push({ async : next, linkf : (function(a21,a11,f1) {
 			return function(v1) {
-				return f1[0](a11[0],a21[0],v1);
+				f1[0](a11[0],a21[0],v1);
+				return;
 			};
 		})([a1],[_g1],f)});
 	}
@@ -3756,7 +3758,7 @@ promhx_Stream.wheneverAll = function(itb) {
 			}
 			next.handleResolve(_g);
 		}
-		return null;
+		return;
 	};
 	var tmp1 = $iterator(all)();
 	while(tmp1.hasNext()) {
@@ -3772,7 +3774,8 @@ promhx_Stream.wheneverAll = function(itb) {
 		}
 		a1._update.push({ async : next, linkf : (function(a21,a11,f1) {
 			return function(v1) {
-				return f1[0](a11[0],a21[0],v1);
+				f1[0](a11[0],a21[0],v1);
+				return;
 			};
 		})([a1],[_g1],f)});
 	}
