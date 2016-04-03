@@ -26,4 +26,8 @@ class Token {
         this.subTokens = subTokens;
         this.sectionEndIndex = sectionEndIndex;
     }
+
+    public function toString():String {
+        return 'Token($type, ${haxe.Json.stringify(value)}, $startIndex, $endIndex, [${if (subTokens != null) subTokens.join(", ") else ""}], $sectionEndIndex)';
+    }
 }
