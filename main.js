@@ -3303,6 +3303,9 @@ mustache_Token.prototype = {
 	,endIndex: null
 	,subTokens: null
 	,sectionEndIndex: null
+	,toString: function() {
+		return "Token(" + Std.string(this.type) + ", " + JSON.stringify(this.value) + ", " + this.startIndex + ", " + this.endIndex + ", [" + (this.subTokens != null?this.subTokens.join(", "):"") + "], " + this.sectionEndIndex + ")";
+	}
 	,__class__: mustache_Token
 };
 var promhx_base_AsyncBase = function(d) {

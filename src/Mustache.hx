@@ -29,7 +29,7 @@ class Mustache {
             return [];
 
         var sections = [];     // Stack to hold section tokens
-        var tokens:Array<Token> = [];       // Buffer to hold the tokens
+        var tokens = [];       // Buffer to hold the tokens
         var spaces = [];       // Indices of whitespace tokens on the current line
         var hasTag = false;    // Is there a {{tag}} on the current line?
         var nonSpace = false;  // Is there a non-space char on the current line?
