@@ -34,20 +34,6 @@ class Mustache {
         var hasTag = false;    // Is there a {{tag}} on the current line?
         var nonSpace = false;  // Is there a non-space char on the current line?
 
-        // Strips all whitespace tokens array for the current line
-        // if there was a {{#tag}} on it and otherwise only space.
-        inline function stripSpace() {
-            if (hasTag && !nonSpace) {
-                while (spaces.length > 0)
-                    tokens[spaces.pop()] = null;
-            } else {
-                spaces = [];
-            }
-
-            hasTag = false;
-            nonSpace = false;
-        }
-
         var openingTagRe, closingTagRe, closingCurlyRe;
         function compileTags(tagsToCompile:Array<String>) {
             if (tagsToCompile.length != 2)
@@ -79,8 +65,19 @@ class Mustache {
                     start += 1;
 
                     // Check for whitespace on the current line.
-                    if (chr == '\n')
-                        stripSpace();
+                    if (chr == '\n') {
+                        // Strips all whitespace tokens array for the current line
+                        // if there was a {{#tag}} on it and otherwise only space.
+                        if (hasTag && !nonSpace) {
+                            while (spaces.length > 0)
+                                tokens[spaces.pop()] = null;
+                        } else {
+                            spaces = [];
+                        }
+
+                        hasTag = false;
+                        nonSpace = false;
+                    }
                 }
             }
             // Match the opening tag.
