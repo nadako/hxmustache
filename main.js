@@ -504,10 +504,14 @@ Mustache.parseTemplate = function(template,tags) {
 				++start;
 				if(chr == "\n") {
 					if(hasTag && !nonSpace) {
-						while(spaces.length > 0) tokens[spaces.pop()] = null;
-					} else {
-						spaces = [];
+						var _g2 = 0;
+						while(_g2 < spaces.length) {
+							var idx = spaces[_g2];
+							++_g2;
+							tokens[idx] = null;
+						}
 					}
+					spaces = [];
 					hasTag = false;
 					nonSpace = false;
 				}

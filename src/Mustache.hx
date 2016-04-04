@@ -69,12 +69,11 @@ class Mustache {
                         // Strips all whitespace tokens array for the current line
                         // if there was a {{#tag}} on it and otherwise only space.
                         if (hasTag && !nonSpace) {
-                            while (spaces.length > 0)
-                                tokens[spaces.pop()] = null;
-                        } else {
-                            spaces = [];
+                            for (idx in spaces)
+                                tokens[idx] = null;
                         }
 
+                        spaces = [];
                         hasTag = false;
                         nonSpace = false;
                     }
