@@ -62,7 +62,7 @@ private class ContextImpl {
         }
 
         if (Reflect.isFunction(value))
-            value = value(view);
+            value = value();
         return value;
     }
 }

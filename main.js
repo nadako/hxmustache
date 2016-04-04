@@ -2886,7 +2886,7 @@ mustache__$Context_ContextImpl.prototype = {
 			}
 		}
 		if(Reflect.isFunction(value)) {
-			value = value(this.view);
+			value = value();
 		}
 		return value;
 	}
