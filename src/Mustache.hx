@@ -157,7 +157,7 @@ class Mustache {
     static function squashTokens(tokens:Array<Token>):Array<Token> {
         var squashedTokens = [];
 
-        var lastToken:Token = null;
+        var lastToken = null;
         for (token in tokens) {
             if (token != null) {
                 if (token.type == Text && lastToken != null && lastToken.type == Text) {
