@@ -24,6 +24,7 @@ class TestSpec extends buddy.BuddySuite {
             if (p.ext == "json" && p.file != "~lambdas")
                 result.push(p.file);
         }
+        result.push("inheritance");
         result;
     };
 
@@ -44,11 +45,15 @@ class TestSpec extends buddy.BuddySuite {
         ],
         sections: [
             'Standalone Without Newline'
+        ],
+        inheritance: [
+            'Override partial with newlines'
         ]
     };
 
-    static inline function getSpecs(specArea:String):Spec {
-        return haxe.Json.parse(File.getContent('$specsDir/$specArea.json'));
+    static function getSpecs(specArea:String):Spec {
+        var path = if (specArea == "inheritance") "test/inheritance.json" else '$specsDir/$specArea.json';
+        return haxe.Json.parse(File.getContent(path));
     }
 
     public function new() {

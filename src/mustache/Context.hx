@@ -3,8 +3,8 @@ package mustache;
 @:dce
 @:forward
 abstract Context(ContextImpl) from ContextImpl {
-    public inline function new(view:View, ?parentContext:Context) {
-        this = new ContextImpl(view, parentContext);
+    public inline function new(view:View, ?parentContext:Context, ?partialOverride:Token) {
+        this = new ContextImpl(view, parentContext, partialOverride);
     }
 
     @:from static inline function fromView(view:View):Context {
@@ -16,15 +16,17 @@ private class ContextImpl {
     public var view(default,null):View;
     public var parent(default,null):Context;
     var cache:Map<String,Dynamic>;
+    public var partialOverride:Null<Token>;
 
-    public function new(view:View, parentContext:Context) {
+    public function new(view:View, parentContext:Context, partialOverride:Token) {
         this.view = view;
         this.cache = ['.' => view];
         this.parent = parentContext;
+        this.partialOverride = partialOverride;
     }
     
-    public inline function push(view:View):Context {
-        return new Context(view, this);
+    public inline function push(view:View, ?partialOverride:Token):Context {
+        return new Context(view, this, partialOverride);
     }
 
     public function lookup(name:String):Dynamic {

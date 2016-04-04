@@ -4,7 +4,7 @@ import mustache.Token;
 class Mustache {
     public static var tags = ["{{", "}}"];
 
-    static var tagRe = ~/#|\^|\/|>|\{|&|=|!/;
+    static var tagRe = ~/#|\^|\/|>|\{|&|=|<|\$|!/;
     static var whiteRe = ~/\s*/;
     static var spaceRe = ~/\s+/;
     static var equalsRe = ~/\s*=/;
@@ -117,6 +117,8 @@ class Mustache {
                 case "!": Comment;
                 case "=": SetDelimiters;
                 case ">": Partial;
+                case "<": PartialOverride;
+                case "$": Block;
                 default: throw "unknown token type: " + type;
             }
 
@@ -124,7 +126,7 @@ class Mustache {
             tokens.push(token);
 
             switch (tokenType) {
-                case Section(_):
+                case Section(_) | PartialOverride | Block:
                     sections.push(token);
                 case SectionClose:
                     // Check section nesting.
@@ -179,7 +181,7 @@ class Mustache {
 
         for (token in tokens) {
             switch (token.type) {
-                case Section(_):
+                case Section(_) | PartialOverride | Block:
                     collector.push(token);
                     sections.push(token);
                     collector = token.subTokens = [];

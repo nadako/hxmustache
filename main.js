@@ -59,7 +59,7 @@ var ContextTest = function() {
 	this.describe("A new Mustache.Context",buddy_TestFunc.Sync(function() {
 		var context;
 		_gthis.beforeEach(buddy_TestFunc.Sync(function() {
-			context = new mustache__$Context_ContextImpl({ name : "parent", message : "hi", a : { b : "b"}},null);
+			context = new mustache__$Context_ContextImpl({ name : "parent", message : "hi", a : { b : "b"}},null,null);
 		}));
 		_gthis.it("is able to lookup properties of its own view",buddy_TestFunc.Sync(function() {
 			utest_Assert.equals("parent",context.lookup("name"),null,{ fileName : "ContextTest.hx", lineNumber : 13, className : "ContextTest", methodName : "new"});
@@ -69,7 +69,7 @@ var ContextTest = function() {
 		}));
 		_gthis.describe("when pushed",buddy_TestFunc.Sync(function() {
 			_gthis.beforeEach(buddy_TestFunc.Sync(function() {
-				context = new mustache__$Context_ContextImpl({ name : "child", c : { d : "d"}},context);
+				context = new mustache__$Context_ContextImpl({ name : "child", c : { d : "d"}},context,null);
 			}));
 			_gthis.it("returns the child context",buddy_TestFunc.Sync(function() {
 				utest_Assert.equals("child",context.view.name,null,{ fileName : "ContextTest.hx", lineNumber : 26, className : "ContextTest", methodName : "new"});
@@ -414,6 +414,12 @@ mustache_Writer.prototype = {
 			case 3:case 5:case 6:
 				continue;
 				break;
+			case 7:
+				value = this.renderPartialOverride(token,context,partials);
+				break;
+			case 8:
+				value = this.renderTokens(this.resolveBlock(token,context).subTokens,context,partials,originalTemplate);
+				break;
 			}
 			if(value != null) {
 				buffer += value;
@@ -432,10 +438,10 @@ mustache_Writer.prototype = {
 			var buffer = "";
 			var len = arr.length;
 			var _g1 = 0;
-			while(_g1 < len) buffer += this.renderTokens(token.subTokens,new mustache__$Context_ContextImpl(arr[_g1++],context),partials,originalTemplate);
+			while(_g1 < len) buffer += this.renderTokens(token.subTokens,new mustache__$Context_ContextImpl(arr[_g1++],context,null),partials,originalTemplate);
 			return buffer;
 		case 2:
-			return this.renderTokens(token.subTokens,new mustache__$Context_ContextImpl(_g[2],context),partials,originalTemplate);
+			return this.renderTokens(token.subTokens,new mustache__$Context_ContextImpl(_g[2],context,null),partials,originalTemplate);
 		case 3:
 			return this.renderTokens(token.subTokens,context,partials,originalTemplate);
 		case 4:
@@ -460,6 +466,34 @@ mustache_Writer.prototype = {
 			return this.renderTokens(this.parse(value),context,partials,value);
 		}
 		return null;
+	}
+	,renderPartialOverride: function(token,context,partials) {
+		if(partials == null) {
+			return null;
+		}
+		var value = partials(token.value);
+		if(value == null) {
+			return null;
+		}
+		return this.renderTokens(this.parse(value),new mustache__$Context_ContextImpl({ },context,token),partials,value);
+	}
+	,resolveBlock: function(token,context) {
+		var resultToken = token;
+		while(context != null) {
+			if(context.partialOverride != null) {
+				var _g = 0;
+				var _g1 = context.partialOverride.subTokens;
+				while(_g < _g1.length) {
+					var overrideToken = _g1[_g];
+					++_g;
+					if(overrideToken.type == mustache_TokenType.Block && overrideToken.value == token.value) {
+						resultToken = overrideToken;
+					}
+				}
+			}
+			context = context.parent;
+		}
+		return resultToken;
 	}
 	,__class__: mustache_Writer
 };
@@ -551,11 +585,17 @@ Mustache.parseTemplate = function(template,tags) {
 		case "#":
 			tokenType = mustache_TokenType.Section(false);
 			break;
+		case "$":
+			tokenType = mustache_TokenType.Block;
+			break;
 		case "&":
 			tokenType = mustache_TokenType.Value(false);
 			break;
 		case "/":
 			tokenType = mustache_TokenType.SectionClose;
+			break;
+		case "<":
+			tokenType = mustache_TokenType.PartialOverride;
 			break;
 		case "=":
 			tokenType = mustache_TokenType.SetDelimiters;
@@ -575,7 +615,7 @@ Mustache.parseTemplate = function(template,tags) {
 		case 1:
 			nonSpace = true;
 			break;
-		case 2:
+		case 2:case 7:case 8:
 			sections.push(token);
 			break;
 		case 3:
@@ -627,7 +667,7 @@ Mustache.nestTokens = function(tokens) {
 		var token = tokens[_g];
 		++_g;
 		switch(token.type[1]) {
-		case 2:
+		case 2:case 7:case 8:
 			collector.push(token);
 			sections.push(token);
 			collector = token.subTokens = [];
@@ -1347,7 +1387,7 @@ haxe_io_Path.prototype = {
 	,__class__: haxe_io_Path
 };
 var TestSpec = function() {
-	this.skipTests = { comments : ["Standalone Without Newline"], delimiters : ["Standalone Without Newline"], inverted : ["Standalone Without Newline"], partials : ["Standalone Without Previous Line","Standalone Without Newline","Standalone Indentation"], sections : ["Standalone Without Newline"]};
+	this.skipTests = { comments : ["Standalone Without Newline"], delimiters : ["Standalone Without Newline"], inverted : ["Standalone Without Newline"], partials : ["Standalone Without Previous Line","Standalone Without Newline","Standalone Indentation"], sections : ["Standalone Without Newline"], inheritance : ["Override partial with newlines"]};
 	var _gthis = this;
 	buddy_BuddySuite.call(this);
 	this.describe("Mustache spec compliance",buddy_TestFunc.Sync(function() {
@@ -1362,7 +1402,7 @@ var TestSpec = function() {
 			_gthis.describe("- " + specArea[0] + ":",buddy_TestFunc.Sync((function(specArea1) {
 				return function() {
 					var _g2 = 0;
-					var _g3 = JSON.parse(js_node_Fs.readFileSync("spec/specs" + "/" + specArea1[0] + ".json",{ encoding : "utf8"})).tests;
+					var _g3 = TestSpec.getSpecs(specArea1[0]).tests;
 					while(_g2 < _g3.length) {
 						var test = [_g3[_g2]];
 						++_g2;
@@ -1373,7 +1413,7 @@ var TestSpec = function() {
 							_gthis.it(desc,buddy_TestFunc.Sync((function(test1) {
 								return function() {
 									var template = test1[0].template;
-									var context = new mustache__$Context_ContextImpl(test1[0].data,null);
+									var context = new mustache__$Context_ContextImpl(test1[0].data,null,null);
 									var obj = test1[0].partials;
 									var partials = (function() {
 										return function(name) {
@@ -1381,7 +1421,7 @@ var TestSpec = function() {
 										};
 									})();
 									var _this = Mustache.defaultWriter;
-									utest_Assert.equals(test1[0].expected,_this.renderTokens(_this.parse(template),context,partials,template),null,{ fileName : "TestSpec.hx", lineNumber : 69, className : "TestSpec", methodName : "new"});
+									utest_Assert.equals(test1[0].expected,_this.renderTokens(_this.parse(template),context,partials,template),null,{ fileName : "TestSpec.hx", lineNumber : 74, className : "TestSpec", methodName : "new"});
 								};
 							})(test)));
 						}
@@ -1392,6 +1432,9 @@ var TestSpec = function() {
 	}));
 };
 TestSpec.__name__ = ["TestSpec"];
+TestSpec.getSpecs = function(specArea) {
+	return JSON.parse(js_node_Fs.readFileSync(specArea == "inheritance"?"test/inheritance.json":"spec/specs" + "/" + specArea + ".json",{ encoding : "utf8"}));
+};
 TestSpec.__super__ = buddy_BuddySuite;
 TestSpec.prototype = $extend(buddy_BuddySuite.prototype,{
 	skipTests: null
@@ -2787,7 +2830,7 @@ js_Boot.__resolveNativeClass = function(name) {
 	return $global[name];
 };
 var js_node_buffer_Buffer = require("buffer").Buffer;
-var mustache__$Context_ContextImpl = function(view,parentContext) {
+var mustache__$Context_ContextImpl = function(view,parentContext,partialOverride) {
 	this.view = view;
 	var _g = new haxe_ds_StringMap();
 	if(__map_reserved["."] != null) {
@@ -2797,12 +2840,14 @@ var mustache__$Context_ContextImpl = function(view,parentContext) {
 	}
 	this.cache = _g;
 	this.parent = parentContext;
+	this.partialOverride = partialOverride;
 };
 mustache__$Context_ContextImpl.__name__ = ["mustache","_Context","ContextImpl"];
 mustache__$Context_ContextImpl.prototype = {
 	view: null
 	,parent: null
 	,cache: null
+	,partialOverride: null
 	,lookup: function(name) {
 		var value = null;
 		var _this = this.cache;
@@ -2888,7 +2933,7 @@ mustache_Scanner.prototype = {
 	}
 	,__class__: mustache_Scanner
 };
-var mustache_TokenType = { __ename__ : ["mustache","TokenType"], __constructs__ : ["Text","Value","Section","SectionClose","Partial","Comment","SetDelimiters"] };
+var mustache_TokenType = { __ename__ : ["mustache","TokenType"], __constructs__ : ["Text","Value","Section","SectionClose","Partial","Comment","SetDelimiters","PartialOverride","Block"] };
 mustache_TokenType.Text = ["Text",0];
 mustache_TokenType.Text.toString = $estr;
 mustache_TokenType.Text.__enum__ = mustache_TokenType;
@@ -2906,6 +2951,12 @@ mustache_TokenType.Comment.__enum__ = mustache_TokenType;
 mustache_TokenType.SetDelimiters = ["SetDelimiters",6];
 mustache_TokenType.SetDelimiters.toString = $estr;
 mustache_TokenType.SetDelimiters.__enum__ = mustache_TokenType;
+mustache_TokenType.PartialOverride = ["PartialOverride",7];
+mustache_TokenType.PartialOverride.toString = $estr;
+mustache_TokenType.PartialOverride.__enum__ = mustache_TokenType;
+mustache_TokenType.Block = ["Block",8];
+mustache_TokenType.Block.toString = $estr;
+mustache_TokenType.Block.__enum__ = mustache_TokenType;
 var mustache_Token = function(type,value,startIndex,endIndex,subTokens,sectionEndIndex) {
 	this.type = type;
 	this.value = value;
@@ -3566,7 +3617,7 @@ var Enum = { };
 var __map_reserved = {}
 buddy_BuddySuite.useDefaultTrace = false;
 Mustache.tags = ["{{","}}"];
-Mustache.tagRe = new EReg("#|\\^|/|>|\\{|&|=|!","");
+Mustache.tagRe = new EReg("#|\\^|/|>|\\{|&|=|<|\\$|!","");
 Mustache.whiteRe = new EReg("\\s*","");
 Mustache.spaceRe = new EReg("\\s+","");
 Mustache.equalsRe = new EReg("\\s*=","");
@@ -3636,6 +3687,7 @@ TestSpec.specFiles = (function($this) {
 			}
 		}
 	}
+	result.push("inheritance");
 	$r = result;
 	return $r;
 }(this));

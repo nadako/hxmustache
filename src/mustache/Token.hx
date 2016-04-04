@@ -8,6 +8,8 @@ enum TokenType {
     Partial;
     Comment;
     SetDelimiters;
+    PartialOverride;
+    Block;
 }
 
 class Token {

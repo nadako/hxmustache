@@ -36,6 +36,10 @@ class Writer {
                         renderSection(token, context, partials, originalTemplate);
                 case Partial:
                     renderPartial(token, context, partials);
+                case PartialOverride:
+                    renderPartialOverride(token, context, partials);
+                case Block:
+                    renderBlock(token, context, partials, originalTemplate);
                 case Value(escape):
                     var value = context.lookup(token.value);
                     if (value == null)
@@ -96,4 +100,32 @@ class Writer {
         return null;
     }
 
+    function renderPartialOverride(token:Token, context:Context, partials:Partials):String {
+        if (partials == null)
+            return null;
+
+        var value = partials(token.value);
+        if (value == null)
+            return null;
+
+        return renderTokens(this.parse(value), context.push({}, token), partials, value);
+    }
+
+    inline function renderBlock(token:Token, context:Context, partials:Partials, originalTemplate:String):String {
+        return renderTokens(resolveBlock(token, context).subTokens, context, partials, originalTemplate);
+    }
+
+    function resolveBlock(token:Token, context:Context):Token {
+        var resultToken = token;
+        while (context != null) {
+            if (context.partialOverride != null) {
+                for (overrideToken in context.partialOverride.subTokens) {
+                    if (overrideToken.type == Block && overrideToken.value == token.value)
+                        resultToken = overrideToken;
+                }
+            }
+            context = context.parent;
+        }
+        return resultToken;
+    }
 }
