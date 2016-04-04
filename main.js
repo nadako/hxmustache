@@ -28,28 +28,8 @@ buddy_BuddySuite.prototype = {
 		this.currentSuite.specs.add(buddy_TestSpec.Describe(suite,_hasInclude));
 		this.describeQueue.push({ suite : suite, spec : spec});
 	}
-	,xdescribe: function(description,spec,_hasInclude) {
-		if(_hasInclude == null) {
-			_hasInclude = false;
-		}
-	}
-	,before: function(init) {
-		this.beforeEach(init);
-	}
-	,after: function(init) {
-		this.afterEach(init);
-	}
 	,beforeEach: function(init) {
 		this.currentSuite.beforeEach.add(init);
-	}
-	,beforeAll: function(init) {
-		this.currentSuite.beforeAll.add(init);
-	}
-	,afterEach: function(init) {
-		this.currentSuite.afterEach.add(init);
-	}
-	,afterAll: function(init) {
-		this.currentSuite.afterAll.add(init);
 	}
 	,it: function(desc,spec,_hasInclude) {
 		if(_hasInclude == null) {
@@ -380,9 +360,6 @@ var mustache_Writer = function() {
 mustache_Writer.__name__ = ["mustache","Writer"];
 mustache_Writer.prototype = {
 	cache: null
-	,clearCache: function() {
-		this.cache = new haxe_ds_StringMap();
-	}
 	,parse: function(template,tags) {
 		var _this = this.cache;
 		var tokens = __map_reserved[template] != null?_this.getReserved(template):_this.h[template];
@@ -488,16 +465,6 @@ mustache_Writer.prototype = {
 };
 var Mustache = function() { };
 Mustache.__name__ = ["Mustache"];
-Mustache.render = function(template,context,partials) {
-	var _this = Mustache.defaultWriter;
-	return _this.renderTokens(_this.parse(template),context,partials,template);
-};
-Mustache.parse = function(template,tags) {
-	return Mustache.defaultWriter.parse(template,tags);
-};
-Mustache.clearCache = function() {
-	Mustache.defaultWriter.cache = new haxe_ds_StringMap();
-};
 Mustache.parseTemplate = function(template,tags) {
 	if(template.length == 0) {
 		return [];
@@ -680,9 +647,6 @@ Mustache.escapeRegExp = function(string) {
 	return Mustache.escapeRegExpRe.map(string,function(r) {
 		return "\\" + r.matched(0);
 	});
-};
-Mustache.isWhitespace = function(string) {
-	return !Mustache.nonSpaceRe.match(string);
 };
 Mustache.escape = function(string) {
 	return Mustache.escapeRe.map(string,function(re) {
@@ -1255,22 +1219,6 @@ StringBuf.prototype = {
 };
 var StringTools = function() { };
 StringTools.__name__ = ["StringTools"];
-StringTools.startsWith = function(s,start) {
-	if(s.length >= start.length) {
-		return HxOverrides.substr(s,0,start.length) == start;
-	} else {
-		return false;
-	}
-};
-StringTools.endsWith = function(s,end) {
-	var elen = end.length;
-	var slen = s.length;
-	if(slen >= elen) {
-		return HxOverrides.substr(s,slen - elen,elen) == end;
-	} else {
-		return false;
-	}
-};
 StringTools.isSpace = function(s,pos) {
 	var c = HxOverrides.cca(s,pos);
 	if(!(c > 8 && c < 14)) {
@@ -1320,7 +1268,9 @@ TestMain.__interfaces__ = [buddy_Buddy];
 TestMain.main = function() {
 	var testsDone = false;
 	var runner = null;
-	var error = function() {
+	var oldTrace = haxe_Log.trace;
+	var outputError = function() {
+		haxe_Log.trace = oldTrace;
 		haxe_Log.trace(runner.unrecoverableError,{ fileName : "GenerateMain.hx", lineNumber : 182, className : "TestMain", methodName : "main"});
 		var stack = runner.unrecoverableErrorStack;
 		if(stack == null || stack.length == 0) {
@@ -1343,7 +1293,7 @@ TestMain.main = function() {
 		runner = new buddy_SuitesRunner([new ScannerTest(),new ContextTest(),new ParseTest(),new TestSpec()],new buddy_reporting_ConsoleReporter());
 		runner.run().then(function(_) {
 			if(runner.unrecoverableError != null) {
-				error();
+				outputError();
 			}
 			done();
 		});
@@ -1438,9 +1388,6 @@ var TestSpec = function() {
 	}));
 };
 TestSpec.__name__ = ["TestSpec"];
-TestSpec.getSpecs = function(specArea) {
-	return JSON.parse(js_node_Fs.readFileSync("spec/specs" + "/" + specArea + ".json",{ encoding : "utf8"}));
-};
 TestSpec.__super__ = buddy_BuddySuite;
 TestSpec.prototype = $extend(buddy_BuddySuite.prototype,{
 	skipTests: null
@@ -1599,7 +1546,6 @@ buddy_Suite.prototype = {
 		});
 	}
 	,__class__: buddy_Suite
-	,__properties__: {get_suites:"get_suites",get_specs:"get_specs"}
 };
 var buddy_Spec = function(description) {
 	this.traces = [];
@@ -1646,313 +1592,54 @@ buddy_TestSuite.prototype = {
 	,afterAll: null
 	,__class__: buddy_TestSuite
 };
-var buddy_Should = function(value,inverse) {
-	if(inverse == null) {
-		inverse = false;
-	}
-	this.value = value;
-	this.inverse = inverse;
-};
+var buddy_Should = function() { };
 buddy_Should.__name__ = ["buddy","Should"];
-buddy_Should.prototype = {
-	value: null
-	,inverse: null
-	,be: function(expected,p) {
-		this.test(this.value == expected,p,"Expected " + this.quote(expected) + ", was " + this.quote(this.value),"Didn't expect " + this.quote(expected) + " but was equal to that");
-	}
-	,beType: function(type,p) {
-		this.test(js_Boot.__instanceof(this.value,type),p,"Expected " + this.quote(this.value) + " to be type " + this.quote(type),"Expected " + this.quote(this.value) + " not to be type " + this.quote(type));
-	}
-	,quote: function(v) {
-		if(typeof(v) == "string") {
-			return "\"" + Std.string(v) + "\"";
-		} else {
-			return Std.string(v);
-		}
-	}
-	,test: function(expr,p,error,errorInverted) {
-		if(buddy_SuitesRunner.currentTest == null) {
-			throw new js__$Boot_HaxeError("SuitesRunner.currentTest was null");
-		}
-		if(!this.inverse) {
-			buddy_SuitesRunner.currentTest(expr,error,buddy_SuitesRunner.posInfosToStack(p));
-		} else {
-			buddy_SuitesRunner.currentTest(!expr,errorInverted,buddy_SuitesRunner.posInfosToStack(p));
-		}
-	}
-	,__class__: buddy_Should
-};
-var buddy_ShouldDynamic = function(value,inverse) {
-	buddy_Should.call(this,value,inverse);
-};
+var buddy_ShouldDynamic = function() { };
 buddy_ShouldDynamic.__name__ = ["buddy","ShouldDynamic"];
-buddy_ShouldDynamic.should = function(d) {
-	return new buddy_ShouldDynamic(d);
-};
 buddy_ShouldDynamic.__super__ = buddy_Should;
 buddy_ShouldDynamic.prototype = $extend(buddy_Should.prototype,{
-	get_not: function() {
-		return new buddy_ShouldDynamic(this.value,!this.inverse);
-	}
-	,__class__: buddy_ShouldDynamic
-	,__properties__: {get_not:"get_not"}
+	__class__: buddy_ShouldDynamic
 });
-var buddy_ShouldInt = function(value,inverse) {
-	if(inverse == null) {
-		inverse = false;
-	}
-	buddy_Should.call(this,value,inverse);
-};
+var buddy_ShouldEnum = function() { };
+buddy_ShouldEnum.__name__ = ["buddy","ShouldEnum"];
+buddy_ShouldEnum.__super__ = buddy_Should;
+buddy_ShouldEnum.prototype = $extend(buddy_Should.prototype,{
+	__class__: buddy_ShouldEnum
+});
+var buddy_ShouldInt = function() { };
 buddy_ShouldInt.__name__ = ["buddy","ShouldInt"];
-buddy_ShouldInt.should = function(i) {
-	return new buddy_ShouldInt(i);
-};
 buddy_ShouldInt.__super__ = buddy_Should;
 buddy_ShouldInt.prototype = $extend(buddy_Should.prototype,{
-	get_not: function() {
-		return new buddy_ShouldInt(this.value,!this.inverse);
-	}
-	,beLessThan: function(expected,p) {
-		this.test(this.value < expected,p,"Expected less than " + this.quote(expected) + ", was " + this.quote(this.value),"Expected not less than " + this.quote(expected) + ", was " + this.quote(this.value));
-	}
-	,beGreaterThan: function(expected,p) {
-		this.test(this.value > expected,p,"Expected greater than " + this.quote(expected) + ", was " + this.quote(this.value),"Expected not greater than " + this.quote(expected) + ", was " + this.quote(this.value));
-	}
-	,__class__: buddy_ShouldInt
-	,__properties__: {get_not:"get_not"}
+	__class__: buddy_ShouldInt
 });
-var buddy_ShouldFloat = function(value,inverse) {
-	if(inverse == null) {
-		inverse = false;
-	}
-	buddy_Should.call(this,value,inverse);
-};
+var buddy_ShouldFloat = function() { };
 buddy_ShouldFloat.__name__ = ["buddy","ShouldFloat"];
-buddy_ShouldFloat.should = function(i) {
-	return new buddy_ShouldFloat(i);
-};
 buddy_ShouldFloat.__super__ = buddy_Should;
 buddy_ShouldFloat.prototype = $extend(buddy_Should.prototype,{
-	get_not: function() {
-		return new buddy_ShouldFloat(this.value,!this.inverse);
-	}
-	,beLessThan: function(expected,p) {
-		this.test(this.value < expected,p,"Expected less than " + this.quote(expected) + ", was " + this.quote(this.value),"Expected not less than " + this.quote(expected) + ", was " + this.quote(this.value));
-	}
-	,beGreaterThan: function(expected,p) {
-		this.test(this.value > expected,p,"Expected greater than " + this.quote(expected) + ", was " + this.quote(this.value),"Expected not greater than " + this.quote(expected) + ", was " + this.quote(this.value));
-	}
-	,beCloseTo: function(expected,precision,p) {
-		if(precision == null) {
-			precision = 2;
-		}
-		this.test(Math.abs(expected - this.value) < Math.pow(10,-precision) / 2,p,"Expected close to " + this.quote(expected) + ", was " + this.quote(this.value),"Expected " + this.quote(this.value) + " not to be close to " + this.quote(expected));
-	}
-	,__class__: buddy_ShouldFloat
-	,__properties__: {get_not:"get_not"}
+	__class__: buddy_ShouldFloat
 });
-var buddy_ShouldDate = function(value,inverse) {
-	if(inverse == null) {
-		inverse = false;
-	}
-	buddy_Should.call(this,value,inverse);
-};
+var buddy_ShouldDate = function() { };
 buddy_ShouldDate.__name__ = ["buddy","ShouldDate"];
-buddy_ShouldDate.should = function(i) {
-	return new buddy_ShouldDate(i);
-};
 buddy_ShouldDate.__super__ = buddy_Should;
 buddy_ShouldDate.prototype = $extend(buddy_Should.prototype,{
-	get_not: function() {
-		return new buddy_ShouldDate(this.value,!this.inverse);
-	}
-	,beOn: function(expected,p) {
-		this.test(this.value.getTime() == expected.getTime(),p,"Expected date equal to " + this.quote(expected) + ", was " + this.quote(this.value),"Expected date not equal to " + this.quote(expected));
-	}
-	,beBefore: function(expected,p) {
-		this.test(this.value.getTime() < expected.getTime(),p,"Expected date before " + this.quote(expected) + ", was " + this.quote(this.value),"Expected date not before " + this.quote(expected) + ", was " + this.quote(this.value));
-	}
-	,beAfter: function(expected,p) {
-		this.test(this.value.getTime() > expected.getTime(),p,"Expected date after " + this.quote(expected) + ", was " + this.quote(this.value),"Expected date not after " + this.quote(expected) + ", was " + this.quote(this.value));
-	}
-	,beOnStr: function(expected,p) {
-		this.beOn(HxOverrides.strDate(expected),p);
-		return;
-	}
-	,beBeforeStr: function(expected,p) {
-		this.beBefore(HxOverrides.strDate(expected),p);
-		return;
-	}
-	,beAfterStr: function(expected,p) {
-		this.beAfter(HxOverrides.strDate(expected),p);
-		return;
-	}
-	,__class__: buddy_ShouldDate
-	,__properties__: {get_not:"get_not"}
+	__class__: buddy_ShouldDate
 });
-var buddy_ShouldString = function(value,inverse) {
-	if(inverse == null) {
-		inverse = false;
-	}
-	buddy_Should.call(this,value,inverse);
-};
+var buddy_ShouldString = function() { };
 buddy_ShouldString.__name__ = ["buddy","ShouldString"];
-buddy_ShouldString.should = function(str) {
-	return new buddy_ShouldString(str);
-};
 buddy_ShouldString.__super__ = buddy_Should;
 buddy_ShouldString.prototype = $extend(buddy_Should.prototype,{
-	get_not: function() {
-		return new buddy_ShouldString(this.value,!this.inverse);
-	}
-	,contain: function(substring,p) {
-		this.test(this.value.indexOf(substring) >= 0,p,"Expected " + this.quote(this.value) + " to contain " + this.quote(substring),"Expected " + this.quote(this.value) + " not to contain " + this.quote(substring));
-	}
-	,startWith: function(substring,p) {
-		this.test(StringTools.startsWith(this.value,substring),p,"Expected " + this.quote(this.value) + " to start with " + this.quote(substring),"Expected " + this.quote(this.value) + " not to start with " + this.quote(substring));
-	}
-	,endWith: function(substring,p) {
-		this.test(StringTools.endsWith(this.value,substring),p,"Expected " + this.quote(this.value) + " to end with " + this.quote(substring),"Expected " + this.quote(this.value) + " not to end with " + this.quote(substring));
-	}
-	,match: function(regexp,p) {
-		this.test(regexp.match(this.value),p,"Expected " + this.quote(this.value) + " to match regular expression","Expected " + this.quote(this.value) + " not to match regular expression");
-	}
-	,__class__: buddy_ShouldString
-	,__properties__: {get_not:"get_not"}
+	__class__: buddy_ShouldString
 });
-var buddy_ShouldIterable = function(value,inverse) {
-	if(inverse == null) {
-		inverse = false;
-	}
-	buddy_Should.call(this,value,inverse);
-};
+var buddy_ShouldIterable = function() { };
 buddy_ShouldIterable.__name__ = ["buddy","ShouldIterable"];
-buddy_ShouldIterable.should = function(value) {
-	return new buddy_ShouldIterable(value);
-};
 buddy_ShouldIterable.__super__ = buddy_Should;
 buddy_ShouldIterable.prototype = $extend(buddy_Should.prototype,{
-	get_not: function() {
-		return new buddy_ShouldIterable(this.value,!this.inverse);
-	}
-	,contain: function(o,p) {
-		this.test(Lambda.exists(this.value,function(el) {
-			return el == o;
-		}),p,"Expected " + this.quote(this.value) + " to contain " + this.quote(o),"Expected " + this.quote(this.value) + " not to contain " + this.quote(o));
-	}
-	,containAll: function(values,p) {
-		var expr = true;
-		var tmp = $iterator(values)();
-		while(tmp.hasNext()) if(!Lambda.exists(this.value,(function(a) {
-			return function(v) {
-				return v == a[0];
-			};
-		})([tmp.next()]))) {
-			expr = false;
-			break;
-		}
-		this.test(expr,p,"Expected " + this.quote(this.value) + " to contain all of " + this.quote(values),"Expected " + this.quote(this.value) + " not to contain all of " + this.quote(values));
-	}
-	,containExactly: function(values,p) {
-		var a = $iterator(this.value)();
-		var b = $iterator(values)();
-		var expr = true;
-		while(a.hasNext() || b.hasNext()) if(a.next() != b.next()) {
-			expr = false;
-			break;
-		}
-		this.test(expr,p,"Expected " + this.quote(this.value) + " to contain exactly " + this.quote(values),"Expected " + this.quote(this.value) + " not to contain exactly " + this.quote(values));
-	}
-	,__class__: buddy_ShouldIterable
-	,__properties__: {get_not:"get_not"}
+	__class__: buddy_ShouldIterable
 });
-var buddy_ShouldFunctions = function(value,inverse) {
-	if(inverse == null) {
-		inverse = false;
-	}
-	this.value = value;
-	this.inverse = inverse;
-};
+var buddy_ShouldFunctions = function() { };
 buddy_ShouldFunctions.__name__ = ["buddy","ShouldFunctions"];
-buddy_ShouldFunctions.should = function(value) {
-	return new buddy_ShouldFunctions(value);
-};
 buddy_ShouldFunctions.prototype = {
-	value: null
-	,inverse: null
-	,get_not: function() {
-		return new buddy_ShouldFunctions(this.value,!this.inverse);
-	}
-	,throwAnything: function(p) {
-		var caught = false;
-		var exception = null;
-		try {
-			this.value();
-		} catch( e ) {
-			haxe_CallStack.lastException = e;
-			if (e instanceof js__$Boot_HaxeError) e = e.val;
-			exception = e;
-			caught = true;
-		}
-		this.test(caught,p,"Expected " + this.quote(this.value) + " to throw anything, nothing was thrown","Expected " + this.quote(this.value) + " not to throw anything, " + this.quote(exception) + " was thrown");
-		return exception;
-	}
-	,throwValue: function(v,p) {
-		var caught = false;
-		var exception = null;
-		try {
-			this.value();
-		} catch( e ) {
-			haxe_CallStack.lastException = e;
-			if (e instanceof js__$Boot_HaxeError) e = e.val;
-			exception = e;
-			caught = e == v;
-		}
-		this.test(caught,p,"Expected " + this.quote(this.value) + " to throw " + this.quote(v),"Expected " + this.quote(this.value) + " not to throw " + this.quote(v));
-		return exception;
-	}
-	,throwType: function(type,p) {
-		var caught = false;
-		var name = Type.getClassName(type);
-		var exceptionName = null;
-		var exception = null;
-		try {
-			this.value();
-		} catch( e ) {
-			haxe_CallStack.lastException = e;
-			if (e instanceof js__$Boot_HaxeError) e = e.val;
-			exception = e;
-			exceptionName = Type.getClassName(e == null?null:js_Boot.getClass(e));
-			caught = js_Boot.__instanceof(e,type);
-		}
-		if(exceptionName == null) {
-			exceptionName = "no exception";
-		}
-		this.test(caught,p,"Expected " + this.quote(this.value) + " to throw type " + name + ", " + exceptionName + " was thrown instead","Expected " + this.quote(this.value) + " not to throw type " + name);
-		return exception;
-	}
-	,be: function(expected,p) {
-		this.test(this.value == expected,p,"Expected " + this.quote(expected) + ", was " + this.quote(this.value),"Didn't expect " + this.quote(expected) + " but was equal to that");
-	}
-	,quote: function(v) {
-		if(typeof(v) == "string") {
-			return "\"" + Std.string(v) + "\"";
-		} else {
-			return Std.string(v);
-		}
-	}
-	,test: function(expr,p,error,errorInverted) {
-		if(buddy_SuitesRunner.currentTest == null) {
-			throw new js__$Boot_HaxeError("SuitesRunner.currentTest was null");
-		}
-		if(!this.inverse) {
-			buddy_SuitesRunner.currentTest(expr,error,buddy_SuitesRunner.posInfosToStack(p));
-		} else {
-			buddy_SuitesRunner.currentTest(!expr,errorInverted,buddy_SuitesRunner.posInfosToStack(p));
-		}
-	}
-	,__class__: buddy_ShouldFunctions
-	,__properties__: {get_not:"get_not"}
+	__class__: buddy_ShouldFunctions
 };
 var buddy_SuitesRunner = function(buddySuites,reporter) {
 	this.allTestsPassed = false;
@@ -2173,11 +1860,15 @@ buddy_SuitesRunner.prototype = {
 	}
 	,mapTestSpec: function(buddySuite,testSuite,beforeEachStack,afterEachStack,testSpec,done) {
 		var _gthis = this;
-		var oldFail = buddySuite.fail = function(err,p) {
+		var hasCompleted = false;
+		var oldFail = null;
+		oldFail = buddySuite.fail = function(err,p) {
 			if(err == null) {
 				err = "Exception";
 			}
-			done(err,null);
+			if(!hasCompleted && oldFail == buddySuite.fail) {
+				done(err,null);
+			}
 		};
 		var oldPending = buddySuite.pending = function(message,p1) {
 			done("Cannot call pending here.",null);
@@ -2195,14 +1886,15 @@ buddy_SuitesRunner.prototype = {
 		case 1:
 			var test = testSpec[3];
 			var spec = buddy_tests_SelfTest.lastSpec = new buddy_Spec(testSpec[2]);
-			var hasCompleted = false;
-			haxe_Log.trace = function(v,pos) {
-				if(pos == null) {
-					spec.traces.push(v == null?"null":"" + v);
-				} else {
-					spec.traces.push(pos.fileName + ":" + pos.lineNumber + ": " + v);
-				}
-			};
+			if(!buddy_BuddySuite.useDefaultTrace) {
+				haxe_Log.trace = function(v,pos) {
+					if(pos == null) {
+						spec.traces.push(v == null?"null":"" + v);
+					} else {
+						spec.traces.push(pos.fileName + ":" + pos.lineNumber + ": " + v);
+					}
+				};
+			}
 			var specCompleted = function(status,error,stack) {
 				if(hasCompleted) {
 					return;
@@ -2211,7 +1903,9 @@ buddy_SuitesRunner.prototype = {
 				spec.status = status;
 				spec.error = error;
 				spec.stack = stack;
-				haxe_Log.trace = _gthis.oldLog;
+				if(!buddy_BuddySuite.useDefaultTrace) {
+					haxe_Log.trace = _gthis.oldLog;
+				}
 				buddySuite.fail = oldFail;
 				buddySuite.pending = oldPending;
 				_gthis.forEachSeries(_gthis.flatten(afterEachStack),$bind(_gthis,_gthis.runTestFunc),function(err2) {
@@ -2353,8 +2047,6 @@ buddy_SuitesRunner.prototype = {
 	}
 	,__class__: buddy_SuitesRunner
 };
-var buddy_internal_GenerateMain = function() { };
-buddy_internal_GenerateMain.__name__ = ["buddy","internal","GenerateMain"];
 var buddy_internal_sys_NodeJs = function() { };
 buddy_internal_sys_NodeJs.__name__ = ["buddy","internal","sys","NodeJs"];
 buddy_internal_sys_NodeJs.print = function(s) {
@@ -2483,8 +2175,6 @@ buddy_reporting_TraceReporter.prototype = {
 		this.println("" + total + " specs, " + failures + " failures, " + pending + " pending");
 		return this.resolveImmediately(suites);
 	}
-	,print: function(s) {
-	}
 	,println: function(s) {
 		haxe_Log.trace(s,{ fileName : "TraceReporter.hx", lineNumber : 105, className : "buddy.reporting.TraceReporter", methodName : "println"});
 	}
@@ -2538,55 +2228,8 @@ buddy_reporting_ConsoleReporter.prototype = $extend(buddy_reporting_TraceReporte
 });
 var buddy_tests_SelfTest = function() { };
 buddy_tests_SelfTest.__name__ = ["buddy","tests","SelfTest"];
-buddy_tests_SelfTest.passLastSpecIf = function(expr,failReason) {
-	if(expr) {
-		buddy_tests_SelfTest.setLastSpec(buddy_SpecStatus.Passed);
-		failReason = null;
-	} else {
-		buddy_tests_SelfTest.setLastSpec(buddy_SpecStatus.Failed);
-	}
-	var o = buddy_tests_SelfTest.lastSpec;
-	var tmp;
-	var tmp1;
-	if(o.__properties__) {
-		tmp = o.__properties__["set_" + "error"];
-		tmp1 = tmp;
-	} else {
-		tmp1 = false;
-	}
-	if(tmp1) {
-		o[tmp](failReason);
-	} else {
-		o.error = failReason;
-	}
-};
-buddy_tests_SelfTest.setLastSpec = function(status) {
-	var o = buddy_tests_SelfTest.lastSpec;
-	var tmp;
-	var tmp1;
-	if(o.__properties__) {
-		tmp = o.__properties__["set_" + "status"];
-		tmp1 = tmp;
-	} else {
-		tmp1 = false;
-	}
-	if(tmp1) {
-		o[tmp](status);
-	} else {
-		o.status = status;
-	}
-};
 var buddy_tools_AsyncTools = function() { };
 buddy_tools_AsyncTools.__name__ = ["buddy","tools","AsyncTools"];
-buddy_tools_AsyncTools.iterateAsyncBool = function(it,action) {
-	return buddy_tools_AsyncTools.iterateAsync(it,action,true);
-};
-buddy_tools_AsyncTools.iterateAsync = function(it,action,resolveWith) {
-	var finished = new promhx_Deferred();
-	var pr = finished.promise();
-	buddy_tools_AsyncTools.next($iterator(it)(),action,finished,resolveWith);
-	return pr;
-};
 buddy_tools_AsyncTools.wait = function(ms) {
 	var def = new promhx_Deferred();
 	var pr = def.promise();
@@ -2599,15 +2242,6 @@ buddy_tools_AsyncTools.wait = function(ms) {
 		done();
 	},ms);
 	return pr;
-};
-buddy_tools_AsyncTools.next = function(it,action,def,resolveWith) {
-	if(!it.hasNext()) {
-		def.resolve(resolveWith);
-	} else {
-		action(it.next()).then(function(_) {
-			buddy_tools_AsyncTools.next(it,action,def,resolveWith);
-		});
-	}
 };
 var haxe_StackItem = { __ename__ : ["haxe","StackItem"], __constructs__ : ["CFunction","Module","FilePos","Method","LocalFunction"] };
 haxe_StackItem.CFunction = ["CFunction",0];
@@ -2784,11 +2418,6 @@ haxe_Timer.prototype = {
 	}
 	,__class__: haxe_Timer
 };
-var haxe_ds_Option = { __ename__ : ["haxe","ds","Option"], __constructs__ : ["Some","None"] };
-haxe_ds_Option.Some = function(v) { var $x = ["Some",0,v]; $x.__enum__ = haxe_ds_Option; $x.toString = $estr; return $x; };
-haxe_ds_Option.None = ["None",1];
-haxe_ds_Option.None.toString = $estr;
-haxe_ds_Option.None.__enum__ = haxe_ds_Option;
 var haxe_ds_StringMap = function() {
 	this.h = { };
 };
@@ -3170,9 +2799,6 @@ mustache__$Context_ContextImpl.prototype = {
 	view: null
 	,parent: null
 	,cache: null
-	,push: function(view) {
-		return new mustache__$Context_ContextImpl(view,this);
-	}
 	,lookup: function(name) {
 		var value = null;
 		var _this = this.cache;
@@ -3217,13 +2843,6 @@ mustache__$Context_ContextImpl.prototype = {
 	}
 	,__class__: mustache__$Context_ContextImpl
 };
-var mustache__$Partials_Partials_$Impl_$ = {};
-mustache__$Partials_Partials_$Impl_$.__name__ = ["mustache","_Partials","Partials_Impl_"];
-mustache__$Partials_Partials_$Impl_$.fromDynamic = function(obj) {
-	return function(name) {
-		return Reflect.field(obj,name);
-	};
-};
 var mustache_Scanner = function(string) {
 	this.string = string;
 	this.tail = string;
@@ -3234,9 +2853,6 @@ mustache_Scanner.prototype = {
 	string: null
 	,tail: null
 	,pos: null
-	,eos: function() {
-		return this.tail == "";
-	}
 	,scan: function(re) {
 		if(!re.match(this.tail)) {
 			return "";
@@ -3302,9 +2918,6 @@ mustache_Token.prototype = {
 	,endIndex: null
 	,subTokens: null
 	,sectionEndIndex: null
-	,toString: function() {
-		return "Token(" + Std.string(this.type) + ", " + JSON.stringify(this.value) + ", " + this.startIndex + ", " + this.endIndex + ", [" + (this.subTokens != null?this.subTokens.join(", "):"") + "], " + this.sectionEndIndex + ")";
-	}
 	,__class__: mustache_Token
 };
 var promhx_base_AsyncBase = function(d) {
@@ -3327,12 +2940,6 @@ var promhx_base_AsyncBase = function(d) {
 	}
 };
 promhx_base_AsyncBase.__name__ = ["promhx","base","AsyncBase"];
-promhx_base_AsyncBase.link = function(current,next,f) {
-	current._update.push({ async : next, linkf : function(x) {
-		next.handleResolve(f(x));
-	}});
-	promhx_base_AsyncBase.immediateLinkUpdate(current,next,f);
-};
 promhx_base_AsyncBase.immediateLinkUpdate = function(current,next,f) {
 	if(current._errored && !current._errorPending && current._error.length <= 0) {
 		next.handleError(current._errorVal);
@@ -3346,82 +2953,6 @@ promhx_base_AsyncBase.immediateLinkUpdate = function(current,next,f) {
 			next.handleError(e);
 		}
 	}
-};
-promhx_base_AsyncBase.linkAll = function(all,next) {
-	var cthen = function(arr,current,v) {
-		if(arr.length == 0 || promhx_base_AsyncBase.allFulfilled(arr)) {
-			var _g = [];
-			var tmp = $iterator(all)();
-			while(tmp.hasNext()) {
-				var a = tmp.next();
-				_g.push(a == current?v:a._val);
-			}
-			next.handleResolve(_g);
-		}
-		return;
-	};
-	var tmp1 = $iterator(all)();
-	while(tmp1.hasNext()) {
-		var a1 = tmp1.next();
-		var f = [cthen];
-		var _g1 = [];
-		var tmp2 = $iterator(all)();
-		while(tmp2.hasNext()) {
-			var a2 = tmp2.next();
-			if(a2 != a1) {
-				_g1.push(a2);
-			}
-		}
-		a1._update.push({ async : next, linkf : (function(a21,a11,f1) {
-			return function(v1) {
-				f1[0](a11[0],a21[0],v1);
-				return;
-			};
-		})([a1],[_g1],f)});
-	}
-	if(promhx_base_AsyncBase.allFulfilled(all)) {
-		var _g2 = [];
-		var tmp3 = $iterator(all)();
-		while(tmp3.hasNext()) _g2.push(tmp3.next()._val);
-		next.handleResolve(_g2);
-	}
-};
-promhx_base_AsyncBase.pipeLink = function(current,ret,f) {
-	var linked = false;
-	var linkf = function(x) {
-		if(!linked) {
-			linked = true;
-			var pipe_ret = f(x);
-			pipe_ret._update.push({ async : ret, linkf : $bind(ret,ret.handleResolve)});
-			promhx_base_AsyncBase.immediateLinkUpdate(pipe_ret,ret,function(x1) {
-				return x1;
-			});
-		}
-	};
-	current._update.push({ async : ret, linkf : linkf});
-	if(current._resolved && !current._pending) {
-		try {
-			linkf(current._val);
-		} catch( e ) {
-			haxe_CallStack.lastException = e;
-			if (e instanceof js__$Boot_HaxeError) e = e.val;
-			ret.handleError(e);
-		}
-	}
-};
-promhx_base_AsyncBase.allResolved = function($as) {
-	var tmp = $iterator($as)();
-	while(tmp.hasNext()) if(!tmp.next()._resolved) {
-		return false;
-	}
-	return true;
-};
-promhx_base_AsyncBase.allFulfilled = function($as) {
-	var tmp = $iterator($as)();
-	while(tmp.hasNext()) if(!tmp.next()._fulfilled) {
-		return false;
-	}
-	return true;
 };
 promhx_base_AsyncBase.prototype = {
 	_val: null
@@ -3437,28 +2968,6 @@ promhx_base_AsyncBase.prototype = {
 	,catchError: function(f) {
 		this._error.push(f);
 		return this;
-	}
-	,errorThen: function(f) {
-		this._errorMap = f;
-		return this;
-	}
-	,isResolved: function() {
-		return this._resolved;
-	}
-	,isErrored: function() {
-		return this._errored;
-	}
-	,isErrorHandled: function() {
-		return this._error.length > 0;
-	}
-	,isErrorPending: function() {
-		return this._errorPending;
-	}
-	,isFulfilled: function() {
-		return this._fulfilled;
-	}
-	,isPending: function() {
-		return this._pending;
 	}
 	,handleResolve: function(val) {
 		this._resolve(val);
@@ -3554,27 +3063,6 @@ promhx_base_AsyncBase.prototype = {
 		promhx_base_AsyncBase.immediateLinkUpdate(this,next,f1);
 		return ret;
 	}
-	,unlink: function(to) {
-		var _gthis = this;
-		promhx_base_EventLoop.queue.add(function() {
-			_gthis._update = _gthis._update.filter(function(x) {
-				return x.async != to;
-			});
-		});
-		promhx_base_EventLoop.continueOnNextLoop();
-	}
-	,isLinked: function(to) {
-		var _g = 0;
-		var _g1 = this._update;
-		while(_g < _g1.length) {
-			var u = _g1[_g];
-			++_g;
-			if(u.async == to) {
-				return true;
-			}
-		}
-		return false;
-	}
 	,__class__: promhx_base_AsyncBase
 };
 var promhx_Deferred = $hx_exports["promhx"]["Deferred"] = function() {
@@ -3586,17 +3074,8 @@ promhx_Deferred.prototype = $extend(promhx_base_AsyncBase.prototype,{
 	resolve: function(val) {
 		this.handleResolve(val);
 	}
-	,throwError: function(e) {
-		this.handleError(e);
-	}
 	,promise: function() {
 		return new promhx_Promise(this);
-	}
-	,stream: function() {
-		return new promhx_Stream(this);
-	}
-	,publicStream: function() {
-		return new promhx_PublicStream(this);
 	}
 	,__class__: promhx_Deferred
 });
@@ -3605,64 +3084,9 @@ var promhx_Promise = $hx_exports["promhx"]["Promise"] = function(d) {
 	this._rejected = false;
 };
 promhx_Promise.__name__ = ["promhx","Promise"];
-promhx_Promise.whenAll = function(itb) {
-	var ret = new promhx_Promise();
-	var all = itb;
-	var next = ret;
-	var cthen = function(arr,current,v) {
-		if(arr.length == 0 || promhx_base_AsyncBase.allFulfilled(arr)) {
-			var _g = [];
-			var tmp = $iterator(all)();
-			while(tmp.hasNext()) {
-				var a = tmp.next();
-				_g.push(a == current?v:a._val);
-			}
-			next.handleResolve(_g);
-		}
-		return;
-	};
-	var tmp1 = $iterator(all)();
-	while(tmp1.hasNext()) {
-		var a1 = tmp1.next();
-		var f = [cthen];
-		var _g1 = [];
-		var tmp2 = $iterator(all)();
-		while(tmp2.hasNext()) {
-			var a2 = tmp2.next();
-			if(a2 != a1) {
-				_g1.push(a2);
-			}
-		}
-		a1._update.push({ async : next, linkf : (function(a21,a11,f1) {
-			return function(v1) {
-				f1[0](a11[0],a21[0],v1);
-				return;
-			};
-		})([a1],[_g1],f)});
-	}
-	if(promhx_base_AsyncBase.allFulfilled(all)) {
-		var _g2 = [];
-		var tmp3 = $iterator(all)();
-		while(tmp3.hasNext()) _g2.push(tmp3.next()._val);
-		next.handleResolve(_g2);
-	}
-	return ret;
-};
-promhx_Promise.promise = function(_val) {
-	var ret = new promhx_Promise();
-	ret.handleResolve(_val);
-	return ret;
-};
 promhx_Promise.__super__ = promhx_base_AsyncBase;
 promhx_Promise.prototype = $extend(promhx_base_AsyncBase.prototype,{
 	_rejected: null
-	,isRejected: function() {
-		return this._rejected;
-	}
-	,reject: function(e) {
-		this._rejected = true;
-		this.handleError(e);
-	}
 	,handleResolve: function(val) {
 		if(this._resolved) {
 			throw new js__$Boot_HaxeError(promhx_error_PromiseError.AlreadyResolved("Promise has already been resolved"));
@@ -3679,359 +3103,14 @@ promhx_Promise.prototype = $extend(promhx_base_AsyncBase.prototype,{
 		promhx_base_AsyncBase.immediateLinkUpdate(this,next,f1);
 		return ret;
 	}
-	,unlink: function(to) {
-		var _gthis = this;
-		promhx_base_EventLoop.queue.add(function() {
-			if(!_gthis._fulfilled) {
-				_gthis.handleError(promhx_error_PromiseError.DownstreamNotFullfilled("Downstream Promise is not fullfilled"));
-			} else {
-				_gthis._update = _gthis._update.filter(function(x) {
-					return x.async != to;
-				});
-			}
-		});
-		promhx_base_EventLoop.continueOnNextLoop();
-	}
 	,handleError: function(error) {
 		this._rejected = true;
 		this._handleError(error);
 	}
-	,pipe: function(f) {
-		var ret = new promhx_Promise();
-		var ret1 = ret;
-		var f1 = f;
-		var linked = false;
-		var linkf = function(x) {
-			if(!linked) {
-				linked = true;
-				var pipe_ret = f1(x);
-				pipe_ret._update.push({ async : ret1, linkf : $bind(ret1,ret1.handleResolve)});
-				promhx_base_AsyncBase.immediateLinkUpdate(pipe_ret,ret1,function(x1) {
-					return x1;
-				});
-			}
-		};
-		this._update.push({ async : ret1, linkf : linkf});
-		if(this._resolved && !this._pending) {
-			try {
-				linkf(this._val);
-			} catch( e ) {
-				haxe_CallStack.lastException = e;
-				if (e instanceof js__$Boot_HaxeError) e = e.val;
-				ret1.handleError(e);
-			}
-		}
-		return ret;
-	}
-	,errorPipe: function(f) {
-		var ret = new promhx_Promise();
-		this.catchError(function(e) {
-			f(e).then($bind(ret,ret._resolve));
-		});
-		this.then($bind(ret,ret._resolve));
-		return ret;
-	}
 	,__class__: promhx_Promise
-});
-var promhx_Stream = $hx_exports["promhx"]["Stream"] = function(d) {
-	promhx_base_AsyncBase.call(this,d);
-	this._end_deferred = new promhx_Deferred();
-	this._end_promise = this._end_deferred.promise();
-};
-promhx_Stream.__name__ = ["promhx","Stream"];
-promhx_Stream.foreach = function(itb) {
-	var s = new promhx_Stream();
-	var tmp = $iterator(itb)();
-	while(tmp.hasNext()) s.handleResolve(tmp.next());
-	s.end();
-	return s;
-};
-promhx_Stream.wheneverAll = function(itb) {
-	var ret = new promhx_Stream();
-	var all = itb;
-	var next = ret;
-	var cthen = function(arr,current,v) {
-		if(arr.length == 0 || promhx_base_AsyncBase.allFulfilled(arr)) {
-			var _g = [];
-			var tmp = $iterator(all)();
-			while(tmp.hasNext()) {
-				var a = tmp.next();
-				_g.push(a == current?v:a._val);
-			}
-			next.handleResolve(_g);
-		}
-		return;
-	};
-	var tmp1 = $iterator(all)();
-	while(tmp1.hasNext()) {
-		var a1 = tmp1.next();
-		var f = [cthen];
-		var _g1 = [];
-		var tmp2 = $iterator(all)();
-		while(tmp2.hasNext()) {
-			var a2 = tmp2.next();
-			if(a2 != a1) {
-				_g1.push(a2);
-			}
-		}
-		a1._update.push({ async : next, linkf : (function(a21,a11,f1) {
-			return function(v1) {
-				f1[0](a11[0],a21[0],v1);
-				return;
-			};
-		})([a1],[_g1],f)});
-	}
-	if(promhx_base_AsyncBase.allFulfilled(all)) {
-		var _g2 = [];
-		var tmp3 = $iterator(all)();
-		while(tmp3.hasNext()) _g2.push(tmp3.next()._val);
-		next.handleResolve(_g2);
-	}
-	return ret;
-};
-promhx_Stream.concatAll = function(itb) {
-	var ret = new promhx_Stream();
-	var tmp = $iterator(itb)();
-	while(tmp.hasNext()) ret.concat(tmp.next());
-	return ret;
-};
-promhx_Stream.mergeAll = function(itb) {
-	var ret = new promhx_Stream();
-	var tmp = $iterator(itb)();
-	while(tmp.hasNext()) ret.merge(tmp.next());
-	return ret;
-};
-promhx_Stream.stream = function(_val) {
-	var ret = new promhx_Stream();
-	ret.handleResolve(_val);
-	return ret;
-};
-promhx_Stream.__super__ = promhx_base_AsyncBase;
-promhx_Stream.prototype = $extend(promhx_base_AsyncBase.prototype,{
-	deferred: null
-	,_pause: null
-	,_end: null
-	,_end_promise: null
-	,_end_deferred: null
-	,then: function(f) {
-		var ret = new promhx_Stream();
-		var next = ret;
-		var f1 = f;
-		this._update.push({ async : next, linkf : function(x) {
-			next.handleResolve(f1(x));
-		}});
-		promhx_base_AsyncBase.immediateLinkUpdate(this,next,f1);
-		this._end_promise.then(function(x1) {
-			ret.end();
-		});
-		return ret;
-	}
-	,detachStream: function(str) {
-		var filtered = [];
-		var removed = false;
-		var _g = 0;
-		var _g1 = this._update;
-		while(_g < _g1.length) {
-			var u = _g1[_g];
-			++_g;
-			if(u.async == str) {
-				removed = true;
-			} else {
-				filtered.push(u);
-			}
-		}
-		this._update = filtered;
-		return removed;
-	}
-	,first: function() {
-		var s = new promhx_Promise();
-		this.then(function(x) {
-			if(!s._resolved) {
-				s.handleResolve(x);
-			}
-		});
-		return s;
-	}
-	,handleResolve: function(val) {
-		if(!this._end && !this._pause) {
-			this._resolve(val);
-		}
-	}
-	,pause: function(set) {
-		if(set == null) {
-			set = !this._pause;
-		}
-		this._pause = set;
-	}
-	,pipe: function(f) {
-		var ret = new promhx_Stream();
-		var ret1 = ret;
-		var f1 = f;
-		var linked = false;
-		var linkf = function(x) {
-			if(!linked) {
-				linked = true;
-				var pipe_ret = f1(x);
-				pipe_ret._update.push({ async : ret1, linkf : $bind(ret1,ret1.handleResolve)});
-				promhx_base_AsyncBase.immediateLinkUpdate(pipe_ret,ret1,function(x1) {
-					return x1;
-				});
-			}
-		};
-		this._update.push({ async : ret1, linkf : linkf});
-		if(this._resolved && !this._pending) {
-			try {
-				linkf(this._val);
-			} catch( e ) {
-				haxe_CallStack.lastException = e;
-				if (e instanceof js__$Boot_HaxeError) e = e.val;
-				ret1.handleError(e);
-			}
-		}
-		this._end_promise.then(function(x2) {
-			ret.end();
-		});
-		return ret;
-	}
-	,errorPipe: function(f) {
-		var ret = new promhx_Stream();
-		this.catchError(function(e) {
-			var piped = f(e);
-			piped.then($bind(ret,ret._resolve));
-			piped._end_promise.then(($_=ret._end_promise,$bind($_,$_._resolve)));
-		});
-		this.then($bind(ret,ret._resolve));
-		this._end_promise.then(function(x) {
-			ret.end();
-		});
-		return ret;
-	}
-	,handleEnd: function() {
-		if(this._pending) {
-			promhx_base_EventLoop.queue.add($bind(this,this.handleEnd));
-			promhx_base_EventLoop.continueOnNextLoop();
-		} else if(this._end_promise._resolved) {
-			return;
-		} else {
-			this._end = true;
-			this._end_promise.handleResolve(this._resolved?haxe_ds_Option.Some(this._val):haxe_ds_Option.None);
-			this._update = [];
-			this._error = [];
-		}
-	}
-	,end: function() {
-		promhx_base_EventLoop.queue.add($bind(this,this.handleEnd));
-		promhx_base_EventLoop.continueOnNextLoop();
-		return this;
-	}
-	,endThen: function(f) {
-		return this._end_promise.then(f);
-	}
-	,filter: function(f) {
-		var ret = new promhx_Stream();
-		this._update.push({ async : ret, linkf : function(x) {
-			if(f(x)) {
-				ret.handleResolve(x);
-			}
-		}});
-		promhx_base_AsyncBase.immediateLinkUpdate(this,ret,function(x1) {
-			return x1;
-		});
-		return ret;
-	}
-	,concat: function(s) {
-		var ret = new promhx_Stream();
-		this._update.push({ async : ret, linkf : $bind(ret,ret.handleResolve)});
-		promhx_base_AsyncBase.immediateLinkUpdate(this,ret,function(x) {
-			return x;
-		});
-		this._end_promise.then(function(_) {
-			s.pipe(function(x1) {
-				ret.handleResolve(x1);
-				return ret;
-			});
-			s._end_promise.then(function(_1) {
-				ret.end();
-			});
-		});
-		return ret;
-	}
-	,merge: function(s) {
-		var ret = new promhx_Stream();
-		this._update.push({ async : ret, linkf : $bind(ret,ret.handleResolve)});
-		s._update.push({ async : ret, linkf : $bind(ret,ret.handleResolve)});
-		promhx_base_AsyncBase.immediateLinkUpdate(this,ret,function(x) {
-			return x;
-		});
-		promhx_base_AsyncBase.immediateLinkUpdate(s,ret,function(x1) {
-			return x1;
-		});
-		return ret;
-	}
-	,__class__: promhx_Stream
-});
-var promhx_PublicStream = $hx_exports["promhx"]["PublicStream"] = function(def) {
-	promhx_Stream.call(this,def);
-};
-promhx_PublicStream.__name__ = ["promhx","PublicStream"];
-promhx_PublicStream.publicstream = function(val) {
-	var ps = new promhx_PublicStream();
-	ps.handleResolve(val);
-	return ps;
-};
-promhx_PublicStream.__super__ = promhx_Stream;
-promhx_PublicStream.prototype = $extend(promhx_Stream.prototype,{
-	resolve: function(val) {
-		this.handleResolve(val);
-	}
-	,throwError: function(e) {
-		this.handleError(e);
-	}
-	,update: function(val) {
-		this.handleResolve(val);
-	}
-	,__class__: promhx_PublicStream
 });
 var promhx_base_EventLoop = function() { };
 promhx_base_EventLoop.__name__ = ["promhx","base","EventLoop"];
-promhx_base_EventLoop.enqueue = function(eqf) {
-	promhx_base_EventLoop.queue.add(eqf);
-	promhx_base_EventLoop.continueOnNextLoop();
-};
-promhx_base_EventLoop.set_nextLoop = function(f) {
-	if(promhx_base_EventLoop.nextLoop != null) {
-		throw new js__$Boot_HaxeError("nextLoop has already been set");
-	} else {
-		promhx_base_EventLoop.nextLoop = f;
-	}
-	return promhx_base_EventLoop.nextLoop;
-};
-promhx_base_EventLoop.queueEmpty = function() {
-	return promhx_base_EventLoop.queue.isEmpty();
-};
-promhx_base_EventLoop.finish = function(max_iterations) {
-	if(max_iterations == null) {
-		max_iterations = 1000;
-	}
-	var fn = null;
-	while(true) {
-		var tmp;
-		if(max_iterations-- > 0) {
-			fn = promhx_base_EventLoop.queue.pop();
-			tmp = fn != null;
-		} else {
-			tmp = false;
-		}
-		if(!tmp) {
-			break;
-		}
-		fn();
-	}
-	return promhx_base_EventLoop.queue.isEmpty();
-};
-promhx_base_EventLoop.clear = function() {
-	promhx_base_EventLoop.queue = new List();
-};
 promhx_base_EventLoop.f = function() {
 	var fn = promhx_base_EventLoop.queue.pop();
 	if(fn != null) {
@@ -4066,36 +3145,6 @@ utest_Assert.isTrue = function(cond,msg,pos) {
 		utest_Assert.results.add(utest_Assertation.Failure(msg,pos));
 	}
 };
-utest_Assert.isFalse = function(value,msg,pos) {
-	if(null == msg) {
-		msg = "expected false";
-	}
-	utest_Assert.isTrue(value == false,msg,pos);
-};
-utest_Assert.isNull = function(value,msg,pos) {
-	if(msg == null) {
-		msg = "expected null but it is " + utest_Assert.q(value);
-	}
-	utest_Assert.isTrue(value == null,msg,pos);
-};
-utest_Assert.notNull = function(value,msg,pos) {
-	if(null == msg) {
-		msg = "expected not null";
-	}
-	utest_Assert.isTrue(value != null,msg,pos);
-};
-utest_Assert["is"] = function(value,type,msg,pos) {
-	if(msg == null) {
-		msg = "expected type " + utest_Assert.typeToString(type) + " but it is " + utest_Assert.typeToString(value);
-	}
-	utest_Assert.isTrue(js_Boot.__instanceof(value,type),msg,pos);
-};
-utest_Assert.notEquals = function(expected,value,msg,pos) {
-	if(msg == null) {
-		msg = "expected " + utest_Assert.q(expected) + " and test value " + utest_Assert.q(value) + " should be different";
-	}
-	utest_Assert.isFalse(expected == value,msg,pos);
-};
 utest_Assert.equals = function(expected,value,msg,pos) {
 	if(msg == null) {
 		msg = "expected " + utest_Assert.q(expected) + " but it is " + utest_Assert.q(value);
@@ -4107,13 +3156,6 @@ utest_Assert.match = function(pattern,value,msg,pos) {
 		msg = "the value " + utest_Assert.q(value) + " does not match the provided pattern";
 	}
 	utest_Assert.isTrue(pattern.match(value),msg,pos);
-};
-utest_Assert.floatEquals = function(expected,value,approx,msg,pos) {
-	if(msg == null) {
-		msg = "expected " + utest_Assert.q(expected) + " but it is " + utest_Assert.q(value);
-	}
-	utest_Assert.isTrue(utest_Assert._floatEquals(expected,value,approx),msg,pos);
-	return;
 };
 utest_Assert._floatEquals = function(expected,value,approx) {
 	if(isNaN(expected)) {
@@ -4480,90 +3522,6 @@ utest_Assert.same = function(expected,value,recursive,msg,pos) {
 		utest_Assert.fail(msg == null?status.error:msg,pos);
 	}
 };
-utest_Assert.raises = function(method,type,msgNotThrown,msgWrongType,pos) {
-	try {
-		method();
-		var name = Type.getClassName(type);
-		if(name == null) {
-			name = "Dynamic";
-		}
-		if(null == msgNotThrown) {
-			msgNotThrown = "exception of type " + name + " not raised";
-		}
-		utest_Assert.fail(msgNotThrown,pos);
-	} catch( ex ) {
-		haxe_CallStack.lastException = ex;
-		if (ex instanceof js__$Boot_HaxeError) ex = ex.val;
-		if(null == type) {
-			utest_Assert.pass(null,pos);
-		} else {
-			var name1 = Type.getClassName(type);
-			if(null == msgWrongType) {
-				msgWrongType = "expected throw of type " + name1 + " but it is " + Std.string(ex);
-			}
-			utest_Assert.isTrue(js_Boot.__instanceof(ex,type),msgWrongType,pos);
-		}
-	}
-};
-utest_Assert.allows = function(possibilities,value,msg,pos) {
-	if(Lambda.has(possibilities,value)) {
-		utest_Assert.isTrue(true,msg,pos);
-	} else {
-		utest_Assert.fail(msg == null?"value " + utest_Assert.q(value) + " not found in the expected possibilities " + Std.string(possibilities):msg,pos);
-	}
-};
-utest_Assert.contains = function(match,values,msg,pos) {
-	if(Lambda.has(values,match)) {
-		utest_Assert.isTrue(true,msg,pos);
-	} else {
-		utest_Assert.fail(msg == null?"values " + utest_Assert.q(values) + " do not contain " + Std.string(match):msg,pos);
-	}
-};
-utest_Assert.notContains = function(match,values,msg,pos) {
-	if(!Lambda.has(values,match)) {
-		utest_Assert.isTrue(true,msg,pos);
-	} else {
-		utest_Assert.fail(msg == null?"values " + utest_Assert.q(values) + " do contain " + Std.string(match):msg,pos);
-	}
-};
-utest_Assert.stringContains = function(match,value,msg,pos) {
-	if(value != null && value.indexOf(match) >= 0) {
-		utest_Assert.isTrue(true,msg,pos);
-	} else {
-		utest_Assert.fail(msg == null?"value " + utest_Assert.q(value) + " does not contain " + utest_Assert.q(match):msg,pos);
-	}
-};
-utest_Assert.stringSequence = function(sequence,value,msg,pos) {
-	if(null == value) {
-		utest_Assert.fail(msg == null?"null argument value":msg,pos);
-		return;
-	}
-	var p = 0;
-	var _g = 0;
-	while(_g < sequence.length) {
-		var s = sequence[_g];
-		++_g;
-		var p2 = value.indexOf(s,p);
-		if(p2 < 0) {
-			if(msg == null) {
-				msg = "expected '" + s + "' after ";
-				if(p > 0) {
-					var cut = HxOverrides.substr(value,0,p);
-					if(cut.length > 30) {
-						cut = "..." + HxOverrides.substr(cut,-27,null);
-					}
-					msg += " '" + cut + "'";
-				} else {
-					msg += " begin";
-				}
-			}
-			utest_Assert.fail(msg,pos);
-			return;
-		}
-		p = p2 + s.length;
-	}
-	utest_Assert.isTrue(true,msg,pos);
-};
 utest_Assert.pass = function(msg,pos) {
 	if(msg == null) {
 		msg = "pass expected";
@@ -4575,57 +3533,6 @@ utest_Assert.fail = function(msg,pos) {
 		msg = "failure expected";
 	}
 	utest_Assert.isTrue(false,msg,pos);
-};
-utest_Assert.warn = function(msg) {
-	utest_Assert.results.add(utest_Assertation.Warning(msg));
-};
-utest_Assert.createAsync = function(f,timeout) {
-	return function() {
-	};
-};
-utest_Assert.createEvent = function(f,timeout) {
-	return function(e) {
-	};
-};
-utest_Assert.typeToString = function(t) {
-	try {
-		var o = t;
-		var _t = o == null?null:js_Boot.getClass(o);
-		if(_t != null) {
-			t = _t;
-		}
-	} catch( e ) {
-		haxe_CallStack.lastException = e;
-	}
-	try {
-		return Type.getClassName(t);
-	} catch( e1 ) {
-		haxe_CallStack.lastException = e1;
-	}
-	try {
-		var _t1 = Type.getEnum(t);
-		if(_t1 != null) {
-			t = _t1;
-		}
-	} catch( e2 ) {
-		haxe_CallStack.lastException = e2;
-	}
-	try {
-		return Type.getEnumName(t);
-	} catch( e3 ) {
-		haxe_CallStack.lastException = e3;
-	}
-	try {
-		return Std.string(Type["typeof"](t));
-	} catch( e4 ) {
-		haxe_CallStack.lastException = e4;
-	}
-	try {
-		return Std.string(t);
-	} catch( e5 ) {
-		haxe_CallStack.lastException = e5;
-	}
-	return "<unable to retrieve type name>";
 };
 var utest_Assertation = { __ename__ : ["utest","Assertation"], __constructs__ : ["Success","Failure","Error","SetupError","TeardownError","TimeoutError","AsyncError","Warning"] };
 utest_Assertation.Success = function(pos) { var $x = ["Success",0,pos]; $x.__enum__ = utest_Assertation; $x.toString = $estr; return $x; };
@@ -4653,6 +3560,7 @@ Bool.__ename__ = ["Bool"];
 var Class = { __name__ : ["Class"]};
 var Enum = { };
 var __map_reserved = {}
+buddy_BuddySuite.useDefaultTrace = false;
 Mustache.tags = ["{{","}}"];
 Mustache.tagRe = new EReg("#|\\^|/|>|\\{|&|=|!","");
 Mustache.whiteRe = new EReg("\\s*","");
@@ -4709,7 +3617,6 @@ Mustache.entityMap = (function($this) {
 	return $r;
 }(this));
 Mustache.escapeRe = new EReg("[&<>\"'`=/]","g");
-TestSpec.specsDir = "spec/specs";
 TestSpec.specFiles = (function($this) {
 	var $r;
 	var result = [];
