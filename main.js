@@ -551,10 +551,9 @@ Mustache.parseTemplate = function(template,tags) {
 		}
 		hasTag = true;
 		var type = scanner.scan(Mustache.tagRe);
-		if(type.length == 0) {
-			type = "name";
+		if(type.length > 0) {
+			scanner.scan(Mustache.whiteRe);
 		}
-		scanner.scan(Mustache.whiteRe);
 		if(type == "=") {
 			value = scanner.scanUntil(Mustache.equalsRe);
 			scanner.scan(Mustache.equalsRe);
@@ -572,6 +571,9 @@ Mustache.parseTemplate = function(template,tags) {
 		}
 		var tokenType;
 		switch(type) {
+		case "":
+			tokenType = mustache_TokenType.Value(true);
+			break;
 		case "!":
 			tokenType = mustache_TokenType.Comment;
 			break;
@@ -592,9 +594,6 @@ Mustache.parseTemplate = function(template,tags) {
 			break;
 		case "^":
 			tokenType = mustache_TokenType.Section(true);
-			break;
-		case "name":
-			tokenType = mustache_TokenType.Value(true);
 			break;
 		default:
 			throw new js__$Boot_HaxeError("unknown token type: " + type);

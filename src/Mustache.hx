@@ -87,10 +87,9 @@ class Mustache {
             hasTag = true;
 
             // Get the tag type.
-            var tokenType;
             var type = scanner.scan(tagRe);
-            if (type.length == 0) type = 'name';
-            scanner.scan(whiteRe);
+            if (type.length > 0)
+                scanner.scan(whiteRe);
 
             // Get the tag value.
             if (type == '=') {
@@ -114,7 +113,7 @@ class Mustache {
                 case "#": Section(false);
                 case "^": Section(true);
                 case "/": SectionClose;
-                case "name": Value(true);
+                case "": Value(true);
                 case "&": Value(false);
                 case "!": Comment;
                 case "=": SetDelimiters;
