@@ -3,9 +3,9 @@
     "url": "https://github.com/nadako/hxmustache",
     "description": "Logic-less templates",
     "license": "MIT",
-    "version": "0.1.1",
+    "version": "0.2.0",
     "classPath": "src",
-    "releasenote": "Truthy/falsy section values refactoring, minor optimizations",
+    "releasenote": "Add template inheritance, add some documentation, minor refactorings",
     "contributors": ["nadako"],
     "tags": ["cross", "template"]
 }
