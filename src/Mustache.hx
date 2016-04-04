@@ -256,5 +256,5 @@ enum SectionValueKind {
     KArray(a:Array<Dynamic>);
     KObject(o:{});
     KBasic;
-    KFunction(f:View->String->(String->Null<String>)->Null<String>);
+    KFunction(f:String->(String->Null<String>)->Null<String>);
 }

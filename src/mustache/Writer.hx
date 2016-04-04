@@ -77,7 +77,7 @@ class Writer {
                 buffer;
             case KFunction(f):
                 // Extract the portion of the original template that the section contains.
-                f(context.view, originalTemplate.substring(token.endIndex, token.sectionEndIndex), function(template) return render(template, context, partials));
+                f(originalTemplate.substring(token.endIndex, token.sectionEndIndex), function(template) return render(template, context, partials));
         }
     }
 

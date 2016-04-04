@@ -445,7 +445,7 @@ mustache_Writer.prototype = {
 		case 3:
 			return this.renderTokens(token.subTokens,context,partials,originalTemplate);
 		case 4:
-			return _g[2](context.view,originalTemplate.substring(token.endIndex,token.sectionEndIndex),function(template) {
+			return _g[2](originalTemplate.substring(token.endIndex,token.sectionEndIndex),function(template) {
 				return _gthis.render(template,context,partials);
 			});
 		}
