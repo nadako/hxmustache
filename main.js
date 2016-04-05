@@ -358,13 +358,24 @@ var mustache_Writer = function() {
 	this.cache = new haxe_ds_StringMap();
 };
 mustache_Writer.__name__ = ["mustache","Writer"];
+mustache_Writer.escapeHTML = function(string) {
+	return mustache_Writer.escapeRe.map(string,function(re) {
+		var key = re.matched(0);
+		var _this = mustache_Writer.entityMap;
+		if(__map_reserved[key] != null) {
+			return _this.getReserved(key);
+		} else {
+			return _this.h[key];
+		}
+	});
+};
 mustache_Writer.prototype = {
 	cache: null
 	,parse: function(template,tags) {
 		var _this = this.cache;
 		var tokens = __map_reserved[template] != null?_this.getReserved(template):_this.h[template];
 		if(tokens == null) {
-			var v = Mustache.parseTemplate(template,tags);
+			var v = mustache_Parser.parse(template,tags);
 			var _this1 = this.cache;
 			if(__map_reserved[template] != null) {
 				_this1.setReserved(template,v);
@@ -396,7 +407,7 @@ mustache_Writer.prototype = {
 				if(value1 == null) {
 					value = null;
 				} else if($escape) {
-					value = Mustache.escape(Std.string(value1));
+					value = mustache_Writer.escapeHTML(Std.string(value1));
 				} else {
 					value = Std.string(value1);
 				}
@@ -499,210 +510,6 @@ mustache_Writer.prototype = {
 };
 var Mustache = function() { };
 Mustache.__name__ = ["Mustache"];
-Mustache.parseTemplate = function(template,tags) {
-	if(template.length == 0) {
-		return [];
-	}
-	var sections = [];
-	var tokens = [];
-	var spaces = [];
-	var hasTag = false;
-	var nonSpace = false;
-	var openingTagRe;
-	var closingTagRe;
-	var closingCurlyRe;
-	var compileTags = function(tagsToCompile) {
-		if(tagsToCompile.length != 2) {
-			throw new js__$Boot_HaxeError("Invalid tags: " + Std.string(tagsToCompile));
-		}
-		openingTagRe = new EReg(Mustache.escapeRegExp(tagsToCompile[0]) + "\\s*","");
-		closingTagRe = new EReg("\\s*" + Mustache.escapeRegExp(tagsToCompile[1]),"");
-		closingCurlyRe = new EReg("\\s*" + Mustache.escapeRegExp("}" + tagsToCompile[1]),"");
-	};
-	compileTags(tags != null?tags:Mustache.tags);
-	var scanner = new mustache_Scanner(template);
-	while(scanner.tail != "") {
-		var start = scanner.pos;
-		var value = scanner.scanUntil(openingTagRe);
-		if(value.length > 0) {
-			var _g1 = 0;
-			var _g = value.length;
-			while(_g1 < _g) {
-				var chr = value.charAt(_g1++);
-				if(!Mustache.nonSpaceRe.match(chr)) {
-					spaces.push(tokens.length);
-				} else {
-					nonSpace = true;
-				}
-				tokens.push(new mustache_Token(mustache_TokenType.Text,chr,start,start + 1));
-				++start;
-				if(chr == "\n") {
-					if(hasTag && !nonSpace) {
-						var _g2 = 0;
-						while(_g2 < spaces.length) {
-							var idx = spaces[_g2];
-							++_g2;
-							tokens[idx] = null;
-						}
-					}
-					spaces = [];
-					hasTag = false;
-					nonSpace = false;
-				}
-			}
-		}
-		if(scanner.scan(openingTagRe).length == 0) {
-			break;
-		}
-		hasTag = true;
-		var type = scanner.scan(Mustache.tagRe);
-		if(type.length > 0) {
-			scanner.scan(Mustache.whiteRe);
-		}
-		if(type == "=") {
-			value = scanner.scanUntil(Mustache.equalsRe);
-			scanner.scan(Mustache.equalsRe);
-			scanner.scanUntil(closingTagRe);
-		} else if(type == "{") {
-			value = scanner.scanUntil(closingCurlyRe);
-			scanner.scan(Mustache.curlyRe);
-			scanner.scanUntil(closingTagRe);
-			type = "&";
-		} else {
-			value = scanner.scanUntil(closingTagRe);
-		}
-		if(scanner.scan(closingTagRe).length == 0) {
-			throw new js__$Boot_HaxeError("Unclosed tag at " + scanner.pos);
-		}
-		var tokenType;
-		switch(type) {
-		case "":
-			tokenType = mustache_TokenType.Value(true);
-			break;
-		case "!":
-			tokenType = mustache_TokenType.Comment;
-			break;
-		case "#":
-			tokenType = mustache_TokenType.Section(false);
-			break;
-		case "$":
-			tokenType = mustache_TokenType.Block;
-			break;
-		case "&":
-			tokenType = mustache_TokenType.Value(false);
-			break;
-		case "/":
-			tokenType = mustache_TokenType.SectionClose;
-			break;
-		case "<":
-			tokenType = mustache_TokenType.PartialOverride;
-			break;
-		case "=":
-			tokenType = mustache_TokenType.SetDelimiters;
-			break;
-		case ">":
-			tokenType = mustache_TokenType.Partial;
-			break;
-		case "^":
-			tokenType = mustache_TokenType.Section(true);
-			break;
-		default:
-			throw new js__$Boot_HaxeError("unknown token type: " + type);
-		}
-		var token = new mustache_Token(tokenType,value,start,scanner.pos);
-		tokens.push(token);
-		switch(tokenType[1]) {
-		case 1:
-			nonSpace = true;
-			break;
-		case 2:case 7:case 8:
-			sections.push(token);
-			break;
-		case 3:
-			var openSection = sections.pop();
-			if(openSection == null) {
-				throw new js__$Boot_HaxeError("Unopened section \"" + value + "\" at " + start);
-			}
-			if(openSection.value != value) {
-				throw new js__$Boot_HaxeError("Unclosed section \"" + openSection.value + "\" at " + start);
-			}
-			break;
-		case 6:
-			compileTags(Mustache.spaceRe.split(value));
-			break;
-		default:
-		}
-	}
-	var openSection1 = sections.pop();
-	if(openSection1 != null) {
-		throw new js__$Boot_HaxeError("Unclosed section \"" + openSection1.value + "\" at " + scanner.pos);
-	}
-	return Mustache.nestTokens(Mustache.squashTokens(tokens));
-};
-Mustache.squashTokens = function(tokens) {
-	var squashedTokens = [];
-	var lastToken = null;
-	var _g = 0;
-	while(_g < tokens.length) {
-		var token = tokens[_g];
-		++_g;
-		if(token != null) {
-			if(token.type == mustache_TokenType.Text && lastToken != null && lastToken.type == mustache_TokenType.Text) {
-				lastToken.value += token.value;
-				lastToken.endIndex = token.endIndex;
-			} else {
-				squashedTokens.push(token);
-				lastToken = token;
-			}
-		}
-	}
-	return squashedTokens;
-};
-Mustache.nestTokens = function(tokens) {
-	var nestedTokens = [];
-	var collector = nestedTokens;
-	var sections = [];
-	var _g = 0;
-	while(_g < tokens.length) {
-		var token = tokens[_g];
-		++_g;
-		switch(token.type[1]) {
-		case 2:case 7:case 8:
-			collector.push(token);
-			sections.push(token);
-			collector = token.subTokens = [];
-			break;
-		case 3:
-			var section = sections.pop();
-			section.sectionEndIndex = token.startIndex;
-			if(sections.length > 0) {
-				collector = sections[sections.length - 1].subTokens;
-			} else {
-				collector = nestedTokens;
-			}
-			break;
-		default:
-			collector.push(token);
-		}
-	}
-	return nestedTokens;
-};
-Mustache.escapeRegExp = function(string) {
-	return Mustache.escapeRegExpRe.map(string,function(r) {
-		return "\\" + r.matched(0);
-	});
-};
-Mustache.escape = function(string) {
-	return Mustache.escapeRe.map(string,function(re) {
-		var key = re.matched(0);
-		var _this = Mustache.entityMap;
-		if(__map_reserved[key] != null) {
-			return _this.getReserved(key);
-		} else {
-			return _this.h[key];
-		}
-	});
-};
 Mustache.getSectionValueKind = function(value) {
 	if(value == null) {
 		return SectionValueKind.KFalsy;
@@ -2892,6 +2699,201 @@ mustache__$Context_ContextImpl.prototype = {
 	}
 	,__class__: mustache__$Context_ContextImpl
 };
+var mustache_Parser = function() { };
+mustache_Parser.__name__ = ["mustache","Parser"];
+mustache_Parser.parse = function(template,tags) {
+	if(template.length == 0) {
+		return [];
+	}
+	var openingTagRe;
+	var closingTagRe;
+	var closingCurlyRe;
+	var compileTags = function(tags1) {
+		if(tags1.length != 2) {
+			throw new js__$Boot_HaxeError("Invalid tags: " + Std.string(tags1));
+		}
+		openingTagRe = new EReg(mustache_Parser.escapeRegExp(tags1[0]) + "\\s*","");
+		closingTagRe = new EReg("\\s*" + mustache_Parser.escapeRegExp(tags1[1]),"");
+		closingCurlyRe = new EReg("\\s*" + mustache_Parser.escapeRegExp("}" + tags1[1]),"");
+	};
+	compileTags(tags != null?tags:Mustache.tags);
+	var sections = [];
+	var tokens = [];
+	var spaces = [];
+	var hasTag = false;
+	var nonSpace = false;
+	var scanner = new mustache_Scanner(template);
+	while(scanner.tail != "") {
+		var start = scanner.pos;
+		var value = scanner.scanUntil(openingTagRe);
+		if(value.length > 0) {
+			var _g1 = 0;
+			var _g = value.length;
+			while(_g1 < _g) {
+				var chr = value.charAt(_g1++);
+				if(mustache_Parser.spaceRe.match(chr)) {
+					spaces.push(tokens.length);
+				} else {
+					nonSpace = true;
+				}
+				tokens.push(new mustache_Token(mustache_TokenType.Text,chr,start,start + 1));
+				++start;
+				if(chr == "\n") {
+					if(hasTag && !nonSpace) {
+						var _g2 = 0;
+						while(_g2 < spaces.length) {
+							var idx = spaces[_g2];
+							++_g2;
+							tokens[idx] = null;
+						}
+					}
+					spaces = [];
+					hasTag = false;
+					nonSpace = false;
+				}
+			}
+		}
+		if(scanner.scan(openingTagRe).length == 0) {
+			break;
+		}
+		hasTag = true;
+		var type = scanner.scan(mustache_Parser.tagRe);
+		if(type.length > 0) {
+			scanner.scan(mustache_Parser.whiteRe);
+		}
+		if(type == "=") {
+			value = scanner.scanUntil(mustache_Parser.equalsRe);
+			scanner.scan(mustache_Parser.equalsRe);
+			scanner.scanUntil(closingTagRe);
+		} else if(type == "{") {
+			value = scanner.scanUntil(closingCurlyRe);
+			scanner.scan(mustache_Parser.curlyRe);
+			scanner.scanUntil(closingTagRe);
+			type = "&";
+		} else {
+			value = scanner.scanUntil(closingTagRe);
+		}
+		if(scanner.scan(closingTagRe).length == 0) {
+			throw new js__$Boot_HaxeError("Unclosed tag at " + scanner.pos);
+		}
+		var tokenType;
+		switch(type) {
+		case "":
+			tokenType = mustache_TokenType.Value(true);
+			break;
+		case "!":
+			tokenType = mustache_TokenType.Comment;
+			break;
+		case "#":
+			tokenType = mustache_TokenType.Section(false);
+			break;
+		case "$":
+			tokenType = mustache_TokenType.Block;
+			break;
+		case "&":
+			tokenType = mustache_TokenType.Value(false);
+			break;
+		case "/":
+			tokenType = mustache_TokenType.SectionClose;
+			break;
+		case "<":
+			tokenType = mustache_TokenType.PartialOverride;
+			break;
+		case "=":
+			tokenType = mustache_TokenType.SetDelimiters;
+			break;
+		case ">":
+			tokenType = mustache_TokenType.Partial;
+			break;
+		case "^":
+			tokenType = mustache_TokenType.Section(true);
+			break;
+		default:
+			throw new js__$Boot_HaxeError("unknown token type: " + type);
+		}
+		var token = new mustache_Token(tokenType,value,start,scanner.pos);
+		tokens.push(token);
+		switch(tokenType[1]) {
+		case 1:
+			nonSpace = true;
+			break;
+		case 2:case 7:case 8:
+			sections.push(token);
+			break;
+		case 3:
+			var openSection = sections.pop();
+			if(openSection == null) {
+				throw new js__$Boot_HaxeError("Unopened section \"" + value + "\" at " + start);
+			}
+			if(openSection.value != value) {
+				throw new js__$Boot_HaxeError("Unclosed section \"" + openSection.value + "\" at " + start);
+			}
+			break;
+		case 6:
+			compileTags(mustache_Parser.spaceRe.split(value));
+			break;
+		default:
+		}
+	}
+	var openSection1 = sections.pop();
+	if(openSection1 != null) {
+		throw new js__$Boot_HaxeError("Unclosed section \"" + openSection1.value + "\" at " + scanner.pos);
+	}
+	return mustache_Parser.nestTokens(mustache_Parser.squashTokens(tokens));
+};
+mustache_Parser.squashTokens = function(tokens) {
+	var squashedTokens = [];
+	var lastToken = null;
+	var _g = 0;
+	while(_g < tokens.length) {
+		var token = tokens[_g];
+		++_g;
+		if(token != null) {
+			if(token.type == mustache_TokenType.Text && lastToken != null && lastToken.type == mustache_TokenType.Text) {
+				lastToken.value += token.value;
+				lastToken.endIndex = token.endIndex;
+			} else {
+				squashedTokens.push(token);
+				lastToken = token;
+			}
+		}
+	}
+	return squashedTokens;
+};
+mustache_Parser.nestTokens = function(tokens) {
+	var nestedTokens = [];
+	var collector = nestedTokens;
+	var sections = [];
+	var _g = 0;
+	while(_g < tokens.length) {
+		var token = tokens[_g];
+		++_g;
+		switch(token.type[1]) {
+		case 2:case 7:case 8:
+			collector.push(token);
+			sections.push(token);
+			collector = token.subTokens = [];
+			break;
+		case 3:
+			var section = sections.pop();
+			section.sectionEndIndex = token.startIndex;
+			if(sections.length > 0) {
+				collector = sections[sections.length - 1].subTokens;
+			} else {
+				collector = nestedTokens;
+			}
+			break;
+		default:
+			collector.push(token);
+		}
+	}
+	return nestedTokens;
+};
+mustache_Parser.escapeRegExp = function(string) {
+	return mustache_Parser.escapeRegExpRe.map(string,function(r) {
+		return "\\" + r.matched(0);
+	});
+};
 var mustache_Scanner = function(string) {
 	this.string = string;
 	this.tail = string;
@@ -3616,16 +3618,7 @@ var Class = { __name__ : ["Class"]};
 var Enum = { };
 var __map_reserved = {}
 buddy_BuddySuite.useDefaultTrace = false;
-Mustache.tags = ["{{","}}"];
-Mustache.tagRe = new EReg("#|\\^|/|>|\\{|&|=|<|\\$|!","");
-Mustache.whiteRe = new EReg("\\s*","");
-Mustache.spaceRe = new EReg("\\s+","");
-Mustache.equalsRe = new EReg("\\s*=","");
-Mustache.curlyRe = new EReg("\\s*\\}","");
-Mustache.defaultWriter = new mustache_Writer();
-Mustache.escapeRegExpRe = new EReg("[\\-\\[\\]{}()*+?.,\\\\\\^$|#\\s]","g");
-Mustache.nonSpaceRe = new EReg("\\S","");
-Mustache.entityMap = (function($this) {
+mustache_Writer.entityMap = (function($this) {
 	var $r;
 	var _g = new haxe_ds_StringMap();
 	if(__map_reserved["&"] != null) {
@@ -3671,7 +3664,9 @@ Mustache.entityMap = (function($this) {
 	$r = _g;
 	return $r;
 }(this));
-Mustache.escapeRe = new EReg("[&<>\"'`=/]","g");
+mustache_Writer.escapeRe = new EReg("[&<>\"'`=/]","g");
+Mustache.tags = ["{{","}}"];
+Mustache.defaultWriter = new mustache_Writer();
 TestSpec.specFiles = (function($this) {
 	var $r;
 	var result = [];
@@ -3692,6 +3687,12 @@ TestSpec.specFiles = (function($this) {
 	return $r;
 }(this));
 js_Boot.__toStr = { }.toString;
+mustache_Parser.escapeRegExpRe = new EReg("[\\-\\[\\]{}()*+?.,\\\\\\^$|#\\s]","g");
+mustache_Parser.tagRe = new EReg("#|\\^|/|>|\\{|&|=|<|\\$|!","");
+mustache_Parser.whiteRe = new EReg("\\s*","");
+mustache_Parser.spaceRe = new EReg("\\s+","");
+mustache_Parser.equalsRe = new EReg("\\s*=","");
+mustache_Parser.curlyRe = new EReg("\\s*\\}","");
 promhx_base_EventLoop.queue = new List();
 TestMain.main();
 })(typeof window != "undefined" ? window : typeof exports != "undefined" ? exports : typeof self != "undefined" ? self : this, typeof window != "undefined" ? window : typeof global != "undefined" ? global : typeof self != "undefined" ? self : this);

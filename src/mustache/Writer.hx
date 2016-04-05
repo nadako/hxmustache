@@ -1,5 +1,7 @@
 package mustache;
 
+import Mustache.getSectionValueKind;
+
 class Writer {
     var cache:Map<String,Array<Token>>;
 
@@ -13,10 +15,8 @@ class Writer {
 
     public function parse(template:String, ?tags:Array<String>):Array<Token> {
         var tokens = cache[template];
-
         if (tokens == null)
-            tokens = cache[template] = Mustache.parseTemplate(template, tags);
-
+            tokens = cache[template] = Parser.parse(template, tags);
         return tokens;
     }
 
@@ -45,7 +45,7 @@ class Writer {
                     if (value == null)
                         null;
                     else if (escape)
-                        Mustache.escape(Std.string(value));
+                        escapeHTML(Std.string(value));
                     else
                         Std.string(value);
                 case Text:
@@ -62,7 +62,7 @@ class Writer {
 
     function renderSection(token:Token, context:Context, partials:Partials, originalTemplate:String):String {
         var value = context.lookup(token.value);
-        return switch (Mustache.getSectionValueKind(value)) {
+        return switch (getSectionValueKind(value)) {
             case KFalsy:
                 null;
             case KBasic:
@@ -83,7 +83,7 @@ class Writer {
 
     function renderInverted(token:Token, context:Context, partials:Partials, originalTemplate:String):String {
         var value = context.lookup(token.value);
-        return switch (Mustache.getSectionValueKind(value)) {
+        return switch (getSectionValueKind(value)) {
             case KFalsy: renderTokens(token.subTokens, context, partials, originalTemplate);
             default: null;
         }
@@ -127,5 +127,20 @@ class Writer {
             context = context.parent;
         }
         return resultToken;
+    }
+
+    static var entityMap = [
+        '&' => '&amp;',
+        '<' => '&lt;',
+        '>' => '&gt;',
+        '"' => '&quot;',
+        "'" => '&#39;',
+        '/' => '&#x2F;',
+        '`' => '&#x60;',
+        '=' => '&#x3D;',
+    ];
+    static var escapeRe = ~/[&<>"'`=\/]/g;
+    static function escapeHTML(string:String):String {
+        return escapeRe.map(string, function(re) return entityMap[re.matched(0)]);
     }
 }
