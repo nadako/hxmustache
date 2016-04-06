@@ -2272,6 +2272,11 @@ haxe_Timer.prototype = {
 	}
 	,__class__: haxe_Timer
 };
+var haxe_ds_Option = { __ename__ : ["haxe","ds","Option"], __constructs__ : ["Some","None"] };
+haxe_ds_Option.Some = function(v) { var $x = ["Some",0,v]; $x.__enum__ = haxe_ds_Option; $x.toString = $estr; return $x; };
+haxe_ds_Option.None = ["None",1];
+haxe_ds_Option.None.toString = $estr;
+haxe_ds_Option.None.__enum__ = haxe_ds_Option;
 var haxe_ds_StringMap = function() {
 	this.h = { };
 };
@@ -2650,6 +2655,23 @@ var mustache__$Context_ContextImpl = function(view,parentContext,partialOverride
 	this.partialOverride = partialOverride;
 };
 mustache__$Context_ContextImpl.__name__ = ["mustache","_Context","ContextImpl"];
+mustache__$Context_ContextImpl.getField = function(object,name) {
+	var value = Reflect.field(object,name);
+	if(Reflect.isFunction(value)) {
+		return haxe_ds_Option.Some(function() {
+			return value.apply(object,[]);
+		});
+	}
+	if(value != null || Object.prototype.hasOwnProperty.call(object,name)) {
+		return haxe_ds_Option.Some(value);
+	}
+	var o = object;
+	var cl = o == null?null:js_Boot.getClass(o);
+	if(cl != null && Type.getInstanceFields(cl).indexOf(name) != -1) {
+		return haxe_ds_Option.Some(value);
+	}
+	return haxe_ds_Option.None;
+};
 mustache__$Context_ContextImpl.prototype = {
 	view: null
 	,parent: null
@@ -2663,33 +2685,50 @@ mustache__$Context_ContextImpl.prototype = {
 			value = __map_reserved[name] != null?_this1.getReserved(name):_this1.h[name];
 		} else {
 			var context = this;
-			var lookupHit = false;
 			while(context != null) {
-				if(name.indexOf(".") > 0) {
-					value = context.view;
-					var names = name.split(".");
-					var index = 0;
-					while(value != null && index < names.length) {
-						if(index == names.length - 1) {
-							lookupHit = Object.prototype.hasOwnProperty.call(value,names[index]);
-						}
-						value = Reflect.field(value,names[index++]);
+				var found = false;
+				if(name.indexOf(".") == -1) {
+					var _g = mustache__$Context_ContextImpl.getField(context.view,name);
+					switch(_g[1]) {
+					case 0:
+						var v = _g[2];
+						found = true;
+						value = v;
+						break;
+					case 1:
+						break;
 					}
 				} else {
-					value = Reflect.field(context.view,name);
-					lookupHit = Object.prototype.hasOwnProperty.call(context.view,name);
+					var names = name.split(".");
+					var index = 0;
+					value = context.view;
+					while(value != null && index < names.length) {
+						var _g1 = mustache__$Context_ContextImpl.getField(value,names[index++]);
+						switch(_g1[1]) {
+						case 0:
+							var v1 = _g1[2];
+							if(index == names.length - 1) {
+								found = true;
+							}
+							value = v1;
+							break;
+						case 1:
+							value = null;
+							break;
+						}
+					}
 				}
-				if(lookupHit) {
+				if(found) {
 					break;
 				}
 				context = context.parent;
 			}
-			var v = value;
+			var v2 = value;
 			var _this2 = this.cache;
 			if(__map_reserved[name] != null) {
-				_this2.setReserved(name,v);
+				_this2.setReserved(name,v2);
 			} else {
-				_this2.h[name] = v;
+				_this2.h[name] = v2;
 			}
 		}
 		if(Reflect.isFunction(value)) {

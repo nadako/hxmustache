@@ -34,25 +34,38 @@ private class ContextImpl {
         if (cache.exists(name)) {
             value = cache[name];
         } else {
-            var context = (this : Context), lookupHit = false;
+            var context = (this : Context);
             while (context != null) {
-                if (name.indexOf('.') > 0) {
-                    value = context.view;
+                var found = false;
+
+                if (name.indexOf(".") == -1) {
+                    // simple name - just try getting the value from this view
+                    switch (getField(context.view, name)) {
+                        case Some(v):
+                            found = true;
+                            value = v;
+                        case None:
+                    }
+                } else {
+                    // dotted name - traverse through values
                     var names = name.split('.');
                     var index = 0;
 
+                    value = context.view;
                     while (value != null && index < names.length) {
-                        if (index == names.length - 1)
-                            lookupHit = Reflect.hasField(value, names[index]);
-
-                        value = Reflect.field(value, names[index++]);
+                        switch (getField(value, names[index++])) {
+                            case Some(v):
+                                if (index == names.length - 1)
+                                    found = true;
+                                value = v;
+                            case None:
+                                value = null;
+                        }
                     }
-                } else {
-                    value = Reflect.field(context.view, name);
-                    lookupHit = Reflect.hasField(context.view, name);
+
                 }
 
-                if (lookupHit)
+                if (found)
                     break;
 
                 context = context.parent;
@@ -64,5 +77,26 @@ private class ContextImpl {
         if (Reflect.isFunction(value))
             value = value();
         return value;
+    }
+
+    static function getField(object:Dynamic, name:String):haxe.ds.Option<Dynamic> {
+        var value = Reflect.field(object, name);
+
+        // if field is a function, return a closure that calls the method with this object
+        if (Reflect.isFunction(value))
+            return Some(function() return Reflect.callMethod(object, value, []));
+
+        // if it's a non-null value or is null, but contained in the structure - nice
+        if (value != null || Reflect.hasField(object, name))
+            return Some(value);
+
+        // if it's a null value, and Reflect.hasField returned false (because it's only guaranteed to work on anon structures)
+        // check if object is an instance of class and its definition contains given field
+        var cl = Type.getClass(object);
+        if (cl != null && Type.getInstanceFields(cl).indexOf(name) != -1)
+            return Some(value);
+
+        // otherwise, field not found :(
+        return None;
     }
 }
