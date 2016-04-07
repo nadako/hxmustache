@@ -45,9 +45,6 @@ class TestSpec extends buddy.BuddySuite {
         ],
         sections: [
             'Standalone Without Newline'
-        ],
-        inheritance: [
-            'Override partial with newlines'
         ]
     };
 
