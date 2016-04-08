@@ -1194,7 +1194,7 @@ haxe_io_Path.prototype = {
 	,__class__: haxe_io_Path
 };
 var TestSpec = function() {
-	this.skipTests = { comments : ["Standalone Without Newline"], delimiters : ["Standalone Without Newline"], inverted : ["Standalone Without Newline"], partials : ["Standalone Without Previous Line","Standalone Without Newline","Standalone Indentation"], sections : ["Standalone Without Newline"], inheritance : ["Override partial with newlines"]};
+	this.skipTests = { comments : ["Standalone Without Newline"], delimiters : ["Standalone Without Newline"], inverted : ["Standalone Without Newline"], partials : ["Standalone Without Previous Line","Standalone Without Newline","Standalone Indentation"], sections : ["Standalone Without Newline"]};
 	var _gthis = this;
 	buddy_BuddySuite.call(this);
 	this.describe("Mustache spec compliance",buddy_TestFunc.Sync(function() {
@@ -1228,7 +1228,7 @@ var TestSpec = function() {
 										};
 									})();
 									var _this = Mustache.defaultWriter;
-									utest_Assert.equals(test1[0].expected,_this.renderTokens(_this.parse(template),context,partials,template),null,{ fileName : "TestSpec.hx", lineNumber : 74, className : "TestSpec", methodName : "new"});
+									utest_Assert.equals(test1[0].expected,_this.renderTokens(_this.parse(template),context,partials,template),null,{ fileName : "TestSpec.hx", lineNumber : 71, className : "TestSpec", methodName : "new"});
 								};
 							})(test)));
 						}
