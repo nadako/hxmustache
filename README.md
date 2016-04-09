@@ -137,3 +137,24 @@ class Main {
     }
 }
 ```
+
+## Command-line interface
+
+hxmustache can be used as a command-line tool. Examples:
+
+Output to stdout:
+```
+haxelib run hxmustache view.json template.mustache
+```
+
+Output to `output.html`:
+```
+haxelib run hxmustache view.json template.mustache output.html
+```
+
+Add partial templates:
+```
+haxelib run hxmustache view.json template.mustache -p mypartial.mustache -p myotherpartial.mustache
+```
+
+Partials will be available by the name of the partial template file without directory and extension (e.g. `layout` for `templates/layout.mustache`).
