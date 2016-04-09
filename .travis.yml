@@ -51,6 +51,8 @@ install:
   - haxelib install buddy
   - haxelib install utest
   - haxelib install hxnodejs
+  # needed for haxelib run test
+  - haxelib dev hxmustache .
   - haxelib list
   - git clone https://github.com/mustache/spec
 

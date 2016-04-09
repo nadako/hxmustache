@@ -5,4 +5,7 @@ class TestMain implements buddy.Buddy<[
     #if (!flash && (!js || hxnodejs))
     TestSpec,
     #end
+    #if neko
+    TestRun,
+    #end
 ]> {}
