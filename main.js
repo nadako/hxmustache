@@ -1121,7 +1121,7 @@ TestMain.main = function() {
 	var oldTrace = haxe_Log.trace;
 	var outputError = function() {
 		haxe_Log.trace = oldTrace;
-		haxe_Log.trace(runner.unrecoverableError,{ fileName : "GenerateMain.hx", lineNumber : 182, className : "TestMain", methodName : "main"});
+		haxe_Log.trace(runner.unrecoverableError,{ fileName : "GenerateMain.hx", lineNumber : 187, className : "TestMain", methodName : "main"});
 		var stack = runner.unrecoverableErrorStack;
 		if(stack == null || stack.length == 0) {
 			return;
@@ -1134,7 +1134,7 @@ TestMain.main = function() {
 				var line = s[4];
 				var file = s[3];
 				if(line > 0) {
-					haxe_Log.trace(file + ":" + line,{ fileName : "GenerateMain.hx", lineNumber : 188, className : "TestMain", methodName : "main"});
+					haxe_Log.trace(file + ":" + line,{ fileName : "GenerateMain.hx", lineNumber : 193, className : "TestMain", methodName : "main"});
 				}
 			}
 		}
@@ -2015,8 +2015,10 @@ buddy_reporting_TraceReporter.prototype = {
 					} else {
 						print("  " + sp2.description + " (" + Std.string(sp2.status) + ")");
 					}
+					if(sp2.status != buddy_SpecStatus.Passed) {
+						printStack(sp2.stack);
+					}
 					printTraces(sp2);
-					printStack(sp2.stack);
 					break;
 				}
 			}
@@ -3733,4 +3735,4 @@ mustache_Parser.equalsRe = new EReg("\\s*=","");
 mustache_Parser.curlyRe = new EReg("\\s*\\}","");
 promhx_base_EventLoop.queue = new List();
 TestMain.main();
-})(typeof window != "undefined" ? window : typeof exports != "undefined" ? exports : typeof self != "undefined" ? self : this, typeof window != "undefined" ? window : typeof global != "undefined" ? global : typeof self != "undefined" ? self : this);
+})(typeof exports != "undefined" ? exports : typeof window != "undefined" ? window : typeof self != "undefined" ? self : this, typeof window != "undefined" ? window : typeof global != "undefined" ? global : typeof self != "undefined" ? self : this);
