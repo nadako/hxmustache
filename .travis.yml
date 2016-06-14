@@ -6,64 +6,26 @@ language: haxe
 os:
   - linux
   - osx
-
+  
 haxe:
   - "3.2.1"
   - development
-
-# matrix:
-#   allow_failures:
-#     - haxe: development
-
-addons:
-  apt:
-    packages:
-      # C++
-      - gcc-multilib
-      - g++-multilib
-      # Python
-      - python3
-      # PHP
-      - php5-cli
-      # C#
-      - mono-devel
-      - mono-mcs
-
+  
+matrix:
+  allow_failures:
+    - haxe: development
+    
 install:
-  # os-specific config
-  - if [ "${TRAVIS_OS_NAME}" = "osx" ]; then
-      brew update;
-      brew install mono;
-      brew install python3;
-    fi
-  # Install haxelibs
-  - if [ "${TRAVIS_HAXE_VERSION}" = "development" ]; then
-      haxelib git hxcpp https://github.com/HaxeFoundation/hxcpp.git;
-      pushd $(haxelib path hxcpp | head -1);
-        pushd tools/hxcpp; haxe compile.hxml; popd;
-        pushd project; neko build.n; popd;
-      popd;
-    else
-      haxelib install hxcpp;
-    fi
-  - haxelib install hxjava
-  - haxelib install hxcs
-  - haxelib install buddy
-  - haxelib install utest
-  - haxelib install hxnodejs
-  # needed for haxelib run test
-  - haxelib dev hxmustache .
-  - haxelib list
-  - git clone https://github.com/mustache/spec
+  - haxelib install travix
+  - haxelib run travix install
 
 script:
-  # - haxe tests.hxml --interp
-  - haxe tests.hxml -neko bin/test.n              && neko bin/test.n
-  - haxe tests.hxml -js bin/test.js -lib hxnodejs && node bin/test.js
-  - haxe tests.hxml -java bin/java                && java -jar bin/java/TestMain.jar
-  - haxe tests.hxml -cs bin/cs                    && mono bin/cs/bin/TestMain.exe
-  - haxe tests.hxml -cpp bin/cpp                  && ./bin/cpp/TestMain
-  - haxe tests.hxml -php bin/php                  && php bin/php/index.php
-  - haxe tests.hxml -python bin/test.py           && python3 bin/test.py
-  - haxe tests.hxml -as3 bin/as3
-  - haxe tests.hxml -swf bin/test.swf
+  - haxelib run travix interp
+  - haxelib run travix neko
+  - haxelib run travix python
+  - haxelib run travix node
+  - haxelib run travix flash
+  - haxelib run travix java
+  - haxelib run travix cpp
+  - haxelib run travix cs
+  - haxelib run travix php
