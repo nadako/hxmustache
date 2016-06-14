@@ -6,18 +6,19 @@ language: haxe
 os:
   - linux
   - osx
-  
+
 haxe:
   - "3.2.1"
   - development
-  
+
 matrix:
   allow_failures:
     - haxe: development
-    
+
 install:
   - haxelib install travix
   - haxelib run travix install
+  - git clone https://github.com/mustache/spec
 
 script:
   - haxelib run travix interp
