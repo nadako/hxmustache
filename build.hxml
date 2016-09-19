@@ -4,8 +4,6 @@
 -lib utest
 -dce full
 -main TestMain
-# -main Main
 -lib hxnodejs
 -js main.js
---next
--cmd node main.js
+
