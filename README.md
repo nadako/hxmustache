@@ -9,7 +9,7 @@ Originally ported from [mustache.js](https://github.com/janl/mustache.js).
 **Status**: works fine, passes tests and should be safe to use. Travis-tested on all Haxe targets (except the new Lua one).
 Internal structure and API may change a little, but not much.
 
-[Try online!](http://nadako.github.io/hxmustache/demo/)
+[Try online!](http://nadako.github.io/hxmustache/)
 
 ## Usage
 
@@ -132,7 +132,7 @@ class Main {
                 <div id='content'>
                     Hello, Dan!
                 </div>
-            </body>        
+            </body>
         */
     }
 }

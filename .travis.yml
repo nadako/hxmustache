@@ -67,3 +67,4 @@ script:
   - haxe tests.hxml -python bin/test.py           && python3 bin/test.py
   - haxe tests.hxml -as3 bin/as3
   - haxe tests.hxml -swf bin/test.swf
+  - bash demo-deploy.sh
