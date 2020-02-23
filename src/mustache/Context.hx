@@ -80,6 +80,11 @@ private class ContextImpl {
     }
 
     static function getField(object:Dynamic, name:String):haxe.ds.Option<Dynamic> {
+        var map = #if haxe4 Std.downcast #else Std.instance #end(object, haxe.ds.StringMap);
+        if (map != null) {
+            return map.exists(name) ? Some(map.get(name)) : None;
+        }
+
         var value = Reflect.field(object, name);
 
         // if field is a function, return a closure that calls the method with this object

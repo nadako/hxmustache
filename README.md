@@ -41,6 +41,7 @@ The `template` argument is obviously the template itself. It will be parsed to a
 
 The `context` is the root context for template variables. You can pass any object and its fields will be looked up
 using reflection. If field is a function, it will be called without arguments on lookup to return a value to render.
+If the object passed is instance of `haxe.ds.StringMap` it contents will be accessed via `get` call rather than reflection.
 For an advanced usage, you can manually create `new mustache.Context(yourData)`.
 
 The `partials` (optional) is where partial templates are stored (used by `{{>name}}` and `{{<name}}...{{/name}}` tags).
