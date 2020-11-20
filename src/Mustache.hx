@@ -22,17 +22,17 @@ class Mustache {
         if (value == null)
             return KFalsy;
 
-        if (Std.is(value, Bool))
+        if (#if haxe4 Std.isOfType #else Std.is #end(value, Bool))
             return if ((value : Bool)) KBasic else KFalsy;
 
-        if (Std.is(value, Float))
+        if (#if haxe4 Std.isOfType #else Std.is #end(value, Float))
             return if ((value : Float) != 0) KBasic else KFalsy;
 
-        var str = Std.instance(value, String);
+        var str = #if haxe4 Std.downcast #else Std.instance #end(value, String);
         if (str != null)
             return if (str.length > 0) KObject(str) else KFalsy;
 
-        var arr = Std.instance(value, Array);
+        var arr = #if haxe4 Std.downcast #else Std.instance #end(value, Array);
         if (arr != null)
             return if (arr.length > 0) KArray(arr) else  KFalsy;
 
