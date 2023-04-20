@@ -30,7 +30,7 @@ private class ContextImpl {
     }
 
     public function lookup(name:String):Dynamic {
-        var value = null;
+        var value: Dynamic = null;
         if (cache.exists(name)) {
             value = cache[name];
         } else {
